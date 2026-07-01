@@ -34,6 +34,7 @@ const gameDirInput = document.getElementById('game-dir-input');
 const browseGameDirBtn = document.getElementById('browse-game-dir-btn');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const debugOverlay = document.getElementById('debug-overlay');
+const copyLogBtn = document.getElementById('copy-log-btn');
 const updateBlock = document.getElementById('update-block');
 const installUpdateBtn = document.getElementById('install-update-btn');
 const lblUpdateDesc = document.getElementById('lbl-update-desc');
@@ -726,17 +727,59 @@ API.onLaunchError((msg) => {
 // Отладочные логи в оверлей
 const maxDebugLines = 20;
 const debugLogs = [];
+const fullSessionLogs = []; // Хранит полный лог запуска для копирования (до 2000 строк)
+
 API.onLaunchDebug((data) => {
+  // Добавляем в полный лог
+  fullSessionLogs.push(data);
+  if (fullSessionLogs.length > 2000) fullSessionLogs.shift();
+  
+  // Добавляем на экран (ограниченное количество)
   debugLogs.push(data);
   if (debugLogs.length > maxDebugLines) debugLogs.shift();
   debugOverlay.innerHTML = debugLogs.map(line => `<div>${line}</div>`).join('');
   debugOverlay.scrollTop = debugOverlay.scrollHeight;
 });
 
+// Добавляем логи ошибок запуска в лог сессии
+API.onLaunchError((msg) => {
+  fullSessionLogs.push(`[LAUNCH ERROR] ${msg}`);
+});
+
 // Toggle дебаг-слоя по Ctrl+Shift+D
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.shiftKey && e.code === 'KeyD') {
-    debugOverlay.style.display = debugOverlay.style.display === 'none' ? 'block' : 'none';
+    const isHidden = debugOverlay.style.display === 'none';
+    debugOverlay.style.display = isHidden ? 'block' : 'none';
+    copyLogBtn.style.display = isHidden ? 'block' : 'none';
+  }
+});
+
+// Копирование логов в буфер обмена
+copyLogBtn.addEventListener('click', async () => {
+  if (fullSessionLogs.length === 0) {
+    const originalText = copyLogBtn.textContent;
+    copyLogBtn.textContent = currentLang === 'ru' ? 'ЛОГ ПУСТ!' : 'LOG IS EMPTY!';
+    setTimeout(() => copyLogBtn.textContent = originalText, 1500);
+    return;
+  }
+  
+  try {
+    await navigator.clipboard.writeText(fullSessionLogs.join('\n'));
+    const originalText = copyLogBtn.textContent;
+    copyLogBtn.textContent = currentLang === 'ru' ? 'ЛОГ СКОПИРОВАН!' : 'LOG COPIED!';
+    copyLogBtn.style.background = 'rgba(0, 255, 100, 0.2)';
+    copyLogBtn.style.color = '#00ff64';
+    copyLogBtn.style.borderColor = 'rgba(0, 255, 100, 0.4)';
+    
+    setTimeout(() => {
+      copyLogBtn.textContent = originalText;
+      copyLogBtn.style.background = 'rgba(0, 180, 255, 0.15)';
+      copyLogBtn.style.color = '#00b4ff';
+      copyLogBtn.style.borderColor = 'rgba(0, 180, 255, 0.3)';
+    }, 2000);
+  } catch (err) {
+    console.error('Не удалось скопировать логи:', err);
   }
 });
 
