@@ -1,0 +1,435 @@
+// ============================================
+// main.js — Electron Main Process
+// Minecraft Launcher — Главный процесс
+// ============================================
+
+const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
+const path = require('path');
+
+// Модули лаунчера
+const configManager = require('./lib/config-manager');
+const versionManager = require('./lib/version-manager');
+const launcherCore = require('./lib/launcher-core');
+
+let mainWindow = null;
+let tray = null;
+
+// --- Создание главного окна ---
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1000,
+    height: 650,
+    frame: false,           // Без стандартной рамки ОС
+    resizable: false,
+    transparent: false,
+    show: true,             // Показываем сразу для отладки
+    backgroundColor: '#0a0a0f',
+    icon: path.join(__dirname, 'src', 'icon.png'), // Установка иконки окна
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+
+  // Открыть DevTools в режиме разработки
+  if (process.argv.includes('--enable-logging')) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
+  }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+// --- IPC: Управление окном (кастомный тайтлбар) ---
+ipcMain.on('window-minimize', () => {
+  if (mainWindow) {
+    mainWindow.hide(); // Полностью скрываем окно (убирает с панели задач в трей)
+  }
+});
+
+ipcMain.on('window-close', () => {
+  if (mainWindow) mainWindow.close();
+});
+
+ipcMain.on('window-restore', () => {
+  if (mainWindow) {
+    mainWindow.show(); // Показываем окно обратно
+    mainWindow.focus();
+  }
+});
+
+// --- IPC: Открытие папки игры ---
+ipcMain.on('open-folder', () => {
+  const { shell } = require('electron');
+  const fs = require('fs');
+  try {
+    const config = configManager ? configManager.getConfig() : {};
+    const gameDir = config.gameDirectory;
+    if (gameDir && fs.existsSync(gameDir)) {
+      shell.openPath(gameDir);
+    } else {
+      console.warn('[IPC] Папка игры не существует:', gameDir);
+    }
+  } catch (err) {
+    console.error('[IPC] Ошибка при открытии папки игры:', err);
+  }
+});
+
+// --- IPC: Открытие внешних ссылок в браузере ---
+ipcMain.on('open-external', (event, url) => {
+  const { shell } = require('electron');
+  try {
+    shell.openExternal(url);
+  } catch (err) {
+    console.error('[IPC] Ошибка при открытии внешней ссылки:', err);
+  }
+});
+
+// --- IPC: Конфигурация (заглушки, реализация в Этапе 5) ---
+ipcMain.handle('get-config', async () => {
+  if (configManager) return configManager.getConfig();
+  return {};
+});
+
+ipcMain.handle('save-config', async (event, data) => {
+  if (configManager) return configManager.saveConfig(data);
+  return data;
+});
+
+// --- IPC: Версии (заглушка, реализация в Этапе 4) ---
+ipcMain.handle('get-versions', async () => {
+  if (versionManager) return versionManager.getVersions();
+  return { latest: { release: '1.20.4', snapshot: '1.20.4' }, versions: [] };
+});
+
+// --- IPC: Запуск игры (заглушка, реализация в Этапе 6) ---
+ipcMain.handle('launch-game', async (event, options) => {
+  console.log('[IPC] launch-game', options);
+  if (launcherCore) {
+    const config = configManager ? configManager.getConfig() : {};
+    const mergedOptions = { ...config, ...options };
+    return launcherCore.launchMinecraft(mergedOptions, mainWindow);
+  }
+  return { status: 'not-implemented' };
+});
+
+// --- IPC: Создание собственной сборки модов ---
+ipcMain.handle('create-instance', async (event, { name, mcVersion, loaderType }) => {
+  console.log('[IPC] create-instance', name, mcVersion, loaderType);
+  const fs = require('fs');
+  try {
+    const config = configManager ? configManager.getConfig() : {};
+    const gameDir = config.gameDirectory;
+
+    // 1. Валидация и формирование ID сборки
+    const safeName = name.replace(/[^a-zA-Z0-9_\-\s]/g, '').trim().replace(/\s+/g, '-');
+    if (!safeName) throw new Error('Некорректное название сборки');
+
+    const versionId = `${safeName}-${mcVersion}`;
+    const instanceDir = path.join(gameDir, 'instances', versionId);
+    fs.mkdirSync(instanceDir, { recursive: true });
+    fs.mkdirSync(path.join(instanceDir, 'mods'), { recursive: true });
+    fs.mkdirSync(path.join(instanceDir, 'config'), { recursive: true });
+
+    // 2. Определение версий загрузчиков
+    let inheritsFromVersion = mcVersion;
+    let loaderVersion = '';
+
+    if (loaderType === 'fabric') {
+      loaderVersion = '0.16.9'; // Используем стабильную версию Fabric
+      const fabricManager = require('./lib/fabric-manager');
+      // Устанавливаем Fabric профиль в versions/
+      const fabricVerId = await fabricManager.installFabricProfileForVersion(gameDir, mcVersion, loaderVersion);
+      inheritsFromVersion = fabricVerId;
+    } else if (loaderType === 'forge') {
+      const DEFAULT_FORGE_VERSIONS = {
+        '1.7.10': '10.13.4.1614',
+        '1.12.2': '14.23.5.2860',
+        '1.16.5': '36.2.39',
+        '1.18.2': '40.2.10',
+        '1.19.2': '43.3.0',
+        '1.20.1': '47.2.20',
+        '1.20.4': '49.0.22',
+        '1.21': '51.0.8'
+      };
+      loaderVersion = DEFAULT_FORGE_VERSIONS[mcVersion] || '';
+      if (!loaderVersion && mcVersion.startsWith('1.20.')) loaderVersion = '47.2.20';
+      if (!loaderVersion) {
+        throw new Error(`Автоматическая установка Forge для версии ${mcVersion} пока не поддерживается. Пожалуйста, используйте чистую ваниллу или Fabric.`);
+      }
+    }
+
+    // 3. Создаем наследуемый JSON-профиль версии в versions/
+    const versionFolder = path.join(gameDir, 'versions', versionId);
+    fs.mkdirSync(versionFolder, { recursive: true });
+    const jsonPath = path.join(versionFolder, `${versionId}.json`);
+
+    const inheritsJson = {
+      id: versionId,
+      inheritsFrom: inheritsFromVersion,
+      type: "release",
+      mainClass: loaderType === 'fabric' ? "net.fabricmc.loader.impl.launch.knot.KnotClient" : "net.minecraft.client.main.Main",
+      arguments: {
+        game: []
+      },
+      libraries: [],
+      modLoader: {
+        type: loaderType,
+        version: loaderVersion
+      }
+    };
+
+    fs.writeFileSync(jsonPath, JSON.stringify(inheritsJson, null, 2), 'utf8');
+    console.log(`[LauncherCore] Создана новая сборка модов: ${versionId} (${loaderType})`);
+
+    // 4. Переключаем на созданную сборку в конфиге
+    config.selectedVersion = versionId;
+    config.selectedVersionType = 'custom';
+    configManager.saveConfig(config);
+
+    return { status: 'success', versionId };
+  } catch (err) {
+    console.error('[IPC] Ошибка при создании сборки:', err);
+    throw err;
+  }
+});
+
+// --- IPC: Скачивание мода/сборки с Modrinth ---
+ipcMain.handle('download-mod', async (event, { projectId, type }) => {
+  console.log('[IPC] download-mod', projectId, type);
+  try {
+    const fs = require('fs');
+    const fabricManager = require('./lib/fabric-manager');
+    const config = configManager ? configManager.getConfig() : {};
+    const gameDir = config.gameDirectory;
+    
+    let filename = '';
+    if (projectId === 'optimized-fabric-1.20.4') {
+      console.log('[IPC] Начало установки встроенной сборки Optimized Fabric 1.20.4...');
+      const customVersionId = await fabricManager.setupFabricOptimized(gameDir, mainWindow);
+      
+      // Автоматически переключаем выбранную версию на свежеустановленную
+      config.selectedVersion = customVersionId;
+      config.selectedVersionType = 'custom';
+      configManager.saveConfig(config);
+      
+      filename = '1.20.4 Optimized Fabric';
+    } else if (type === 'modpack') {
+      filename = await fabricManager.installModpack(projectId, gameDir, mainWindow);
+    } else {
+      // Скачивание одиночного мода
+      const selectedVer = config.selectedVersion || 'optimized-fabric-1.20.4';
+      let mcVersion = '1.20.4';
+      let loaderType = 'fabric';
+      let instanceId = '';
+
+      if (selectedVer === 'optimized-fabric-1.20.4') {
+        mcVersion = '1.20.4';
+        loaderType = 'fabric';
+      } else {
+        const versionJsonPath = path.join(gameDir, 'versions', selectedVer, `${selectedVer}.json`);
+        if (fs.existsSync(versionJsonPath)) {
+          try {
+            const json = JSON.parse(fs.readFileSync(versionJsonPath, 'utf8'));
+            instanceId = selectedVer;
+            
+            const javaManager = require('./lib/java-manager');
+            mcVersion = javaManager.getBaseMinecraftVersion(selectedVer, gameDir);
+            
+            if (json.modLoader) {
+              loaderType = json.modLoader.type || 'vanilla';
+            } else if (json.mainClass && json.mainClass.includes('fabric')) {
+              loaderType = 'fabric';
+            } else if (json.mainClass && json.mainClass.includes('forge')) {
+              loaderType = 'forge';
+            } else {
+              loaderType = 'vanilla';
+            }
+          } catch (e) {
+            console.error('[IPC] Ошибка парсинга JSON версии при скачивании мода:', e);
+          }
+        } else {
+          // Если json не существует на диске (официальная ванилла)
+          throw new Error('Моды можно скачивать только для сборок (с Fabric или Forge). Выберите сборку модов в списке версий!');
+        }
+      }
+
+      if (loaderType === 'vanilla') {
+        throw new Error('Нельзя скачивать моды для чистой ванильной версии. Пожалуйста, создайте сборку на Fabric или Forge!');
+      }
+
+      filename = await fabricManager.downloadSingleMod(projectId, gameDir, mainWindow, mcVersion, loaderType, instanceId);
+    }
+    
+    return { status: 'success', filename };
+  } catch (err) {
+    console.error('[IPC] Ошибка скачивания:', err);
+    throw err;
+  }
+});
+
+// --- IPC: Получение детальной информации о конкретной версии ---
+ipcMain.handle('get-version-details', async (event, { versionId }) => {
+  const fs = require('fs');
+  try {
+    const config = configManager ? configManager.getConfig() : {};
+    const gameDir = config.gameDirectory;
+
+    if (versionId === 'optimized-fabric-1.20.4') {
+      return { mcVersion: '1.20.4', loaderType: 'fabric', isCustom: true };
+    }
+
+    const versionJsonPath = path.join(gameDir, 'versions', versionId, `${versionId}.json`);
+    if (fs.existsSync(versionJsonPath)) {
+      const json = JSON.parse(fs.readFileSync(versionJsonPath, 'utf8'));
+      const javaManager = require('./lib/java-manager');
+      const mcVersion = javaManager.getBaseMinecraftVersion(versionId, gameDir);
+      
+      let loaderType = 'vanilla';
+      if (json.modLoader) {
+        loaderType = json.modLoader.type || 'vanilla';
+      } else if (json.mainClass && json.mainClass.includes('fabric')) {
+        loaderType = 'fabric';
+      } else if (json.mainClass && json.mainClass.includes('forge')) {
+        loaderType = 'forge';
+      }
+
+      return { mcVersion, loaderType, isCustom: true };
+    } else {
+      return { mcVersion: versionId, loaderType: 'vanilla', isCustom: false };
+    }
+  } catch (err) {
+    console.error('[IPC] Ошибка при получении деталей версии:', err);
+    return { mcVersion: versionId, loaderType: 'vanilla', isCustom: false };
+  }
+});
+
+// --- IPC: Импорт сборки из локального ZIP/MRPACK файла ---
+ipcMain.handle('import-zip', async () => {
+  const { dialog } = require('electron');
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Выберите архив сборки модов (.zip или .mrpack)',
+      filters: [
+        { name: 'Архивы сборок модов', extensions: ['zip', 'mrpack'] }
+      ],
+      properties: ['openFile']
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { status: 'cancelled' };
+    }
+
+    const filePath = result.filePaths[0];
+    const fabricManager = require('./lib/fabric-manager');
+    const config = configManager ? configManager.getConfig() : {};
+    const gameDir = config.gameDirectory;
+
+    const name = await fabricManager.installLocalZip(filePath, gameDir, mainWindow);
+    return { status: 'success', name };
+  } catch (err) {
+    console.error('[IPC] Ошибка импорта сборки:', err);
+    throw err;
+  }
+});
+
+// --- IPC: Удаление кастомной сборки ---
+ipcMain.handle('delete-version', async (event, { versionId }) => {
+  console.log('[IPC] delete-version', versionId);
+  const fs = require('fs');
+  
+  if (!versionId || versionId.includes('..') || versionId.includes('/') || versionId.includes('\\')) {
+    throw new Error('Некорректный ID версии');
+  }
+
+  if (versionId === 'optimized-fabric-1.20.4') {
+    throw new Error('Нельзя удалить встроенную сборку Optimized Fabric');
+  }
+
+  try {
+    const config = configManager ? configManager.getConfig() : {};
+    const gameDir = config.gameDirectory;
+    const versionFolder = path.join(gameDir, 'versions', versionId);
+
+    if (fs.existsSync(versionFolder)) {
+      // Удаляем рекурсивно
+      fs.rmSync(versionFolder, { recursive: true, force: true });
+      console.log(`[VersionManager] Успешно удалена папка версии: ${versionId}`);
+
+      // Если удаленная версия была выбрана в конфиге, сбрасываем ее на дефолтную
+      if (config.selectedVersion === versionId) {
+        config.selectedVersion = '1.20.4';
+        config.selectedVersionType = 'release';
+        configManager.saveConfig(config);
+      }
+
+      return { status: 'success' };
+    } else {
+      throw new Error('Папка версии не найдена');
+    }
+  } catch (err) {
+    console.error('[VersionManager] Ошибка удаления версии:', err);
+    throw err;
+  }
+});
+
+// --- Создание иконки в системном трее ---
+function createTray() {
+  const iconPath = path.join(__dirname, 'src', 'icon.png');
+  tray = new Tray(iconPath);
+  
+  const contextMenu = Menu.buildFromTemplate([
+    { 
+      label: 'Открыть лаунчер', 
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+        }
+      } 
+    },
+    { type: 'separator' },
+    { 
+      label: 'Выход', 
+      click: () => {
+        app.quit();
+      } 
+    }
+  ]);
+  
+  tray.setToolTip('Minecraft Offline Launcher');
+  tray.setContextMenu(contextMenu);
+  
+  // При клике на иконку трея показываем/скрываем лаунчер
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+      }
+    }
+  });
+}
+
+// --- Обработка ошибок ---
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL]', error);
+});
+
+// --- Запуск приложения ---
+app.whenReady().then(() => {
+  configManager.loadConfig();
+  createWindow();
+  createTray();
+});
+
+app.on('window-all-closed', () => {
+  // Не выходим из приложения автоматически при закрытии всех окон,
+  // если хотим держать приложение в фоне. Но так как у нас window-close
+  // реально закрывает приложение, оставим обычный выход при закрытии окон:
+  app.quit();
+});
