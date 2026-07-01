@@ -34,6 +34,12 @@ const gameDirInput = document.getElementById('game-dir-input');
 const browseGameDirBtn = document.getElementById('browse-game-dir-btn');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const debugOverlay = document.getElementById('debug-overlay');
+const updateBlock = document.getElementById('update-block');
+const installUpdateBtn = document.getElementById('install-update-btn');
+const lblUpdateDesc = document.getElementById('lbl-update-desc');
+
+let updateDownloadUrl = '';
+let latestVersionStr = '';
 
 // Навигация и Каталог модов
 const modsBtn = document.getElementById('mods-btn');
@@ -85,7 +91,10 @@ const TRANSLATIONS = {
     tabCatalog: "Моды и сборки",
     gameDirLabel: "Папка игры",
     gameDirHint: "При смене папки игры старые моды и сборки не переносятся автоматически.",
-    browseBtn: "Обзор..."
+    browseBtn: "Обзор...",
+    updateAvailable: "Доступно обновление!",
+    updateDesc: "Доступна новая версия v{version}. Хотите обновиться?",
+    updateBtn: "ОБНОВИТЬ СЕЙЧАС"
   },
   en: {
     play: "PLAY",
@@ -111,7 +120,10 @@ const TRANSLATIONS = {
     tabCatalog: "Mods & Packs",
     gameDirLabel: "Game Folder",
     gameDirHint: "Changing game folder won't transfer existing mods and versions automatically.",
-    browseBtn: "Browse..."
+    browseBtn: "Browse...",
+    updateAvailable: "Update Available!",
+    updateDesc: "A new version v{version} is available. Update now?",
+    updateBtn: "UPDATE NOW"
   }
 };
 
@@ -152,6 +164,11 @@ const applyLanguage = (lang) => {
   const btnBrowse = document.getElementById('browse-game-dir-btn');
   if (btnBrowse) btnBrowse.textContent = t.browseBtn;
   
+  const lblUpdateAvailable = document.getElementById('lbl-update-available');
+  if (lblUpdateAvailable) lblUpdateAvailable.textContent = t.updateAvailable;
+  if (lblUpdateDesc) lblUpdateDesc.textContent = t.updateDesc.replace('{version}', latestVersionStr || '1.0.1');
+  if (installUpdateBtn) installUpdateBtn.textContent = t.updateBtn;
+
   saveSettingsBtn.textContent = t.saveBtn;
 
   // Каталог модов
@@ -1188,7 +1205,7 @@ const init = async () => {
 // Автопроверка обновлений на GitHub
 async function checkUpdates() {
   const repo = 'Timon2306/minecraft-offline-launcher'; // Измени на свой никнейм на GitHub
-  const currentVersion = '1.0.0';
+  const currentVersion = config.appVersion || '1.0.1';
   
   try {
     const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`);
@@ -1199,11 +1216,48 @@ async function checkUpdates() {
       if (latestVersion !== currentVersion) {
         githubBadge.style.display = 'block';
         console.log(`[UpdateChecker] Доступна новая версия: ${latestVersion}`);
+        
+        // Находим EXE установщик в ассетах релиза
+        const setupAsset = data.assets.find(asset => asset.name.endsWith('.exe'));
+        if (setupAsset) {
+          updateDownloadUrl = setupAsset.browser_download_url;
+          latestVersionStr = latestVersion;
+          
+          // Локализуем описание и показываем блок обновления
+          applyLanguage(currentLang);
+          updateBlock.style.display = 'block';
+        }
       }
     }
   } catch (err) {
     console.warn('[UpdateChecker] Не удалось проверить обновления:', err);
   }
 }
+
+// Слушатель для кнопки установки обновления
+installUpdateBtn.addEventListener('click', async () => {
+  if (!updateDownloadUrl) return;
+  
+  try {
+    installUpdateBtn.disabled = true;
+    installUpdateBtn.style.opacity = '0.5';
+    installUpdateBtn.textContent = currentLang === 'ru' ? 'СКАЧИВАНИЕ...' : 'DOWNLOADING...';
+    
+    // Блокируем кнопку "Играть" и показываем общий прогресс скачивания обновления
+    playButton.disabled = true;
+    statusText.textContent = currentLang === 'ru' ? 'Скачивание обновления лаунчера...' : 'Downloading launcher update...';
+    progressContainer.style.display = 'flex';
+    progressFill.style.width = '0%';
+    
+    await API.downloadAppUpdate(updateDownloadUrl);
+  } catch (err) {
+    console.error('[Updater] Ошибка при автообновлении:', err);
+    installUpdateBtn.disabled = false;
+    installUpdateBtn.style.opacity = '1';
+    installUpdateBtn.textContent = currentLang === 'ru' ? 'ОШИБКА!' : 'ERROR!';
+    playButton.disabled = false;
+    statusText.textContent = currentLang === 'ru' ? `Не удалось обновить: ${err.message}` : `Update failed: ${err.message}`;
+  }
+});
 
 init();

@@ -43,6 +43,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Выбор папки на диске
   selectDirectory: () => ipcRenderer.invoke('select-directory'),
 
+  // Скачивание и установка обновления лаунчера
+  downloadAppUpdate: (url) => ipcRenderer.invoke('download-app-update', { url }),
+
   // События запуска игры (прогресс, логи, статус)
   onProgress: (callback) => ipcRenderer.on('launch-progress', (e, data) => callback(data)),
   onDownloadStatus: (callback) => ipcRenderer.on('download-status', (e, data) => callback(data)),

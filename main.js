@@ -91,7 +91,12 @@ ipcMain.on('open-external', (event, url) => {
 
 // --- IPC: Конфигурация (заглушки, реализация в Этапе 5) ---
 ipcMain.handle('get-config', async () => {
-  if (configManager) return configManager.getConfig();
+  if (configManager) {
+    const conf = configManager.getConfig();
+    const { app } = require('electron');
+    conf.appVersion = app.getVersion();
+    return conf;
+  }
   return {};
 });
 
@@ -109,6 +114,85 @@ ipcMain.handle('select-directory', async () => {
     return result.filePaths[0];
   }
   return null;
+});
+
+ipcMain.handle('download-app-update', async (event, { url }) => {
+  const os = require('os');
+  const https = require('https');
+  const { spawn } = require('child_process');
+  
+  const destPath = path.join(os.tmpdir(), 'minecraft-offline-launcher-setup.exe');
+  if (fs.existsSync(destPath)) {
+    try { fs.unlinkSync(destPath); } catch(e){}
+  }
+  
+  console.log(`[Updater] Скачивание обновления из ${url} в ${destPath}...`);
+  
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(destPath);
+    const options = {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      timeout: 30000
+    };
+    
+    function download(downloadUrl) {
+      https.get(downloadUrl, options, (res) => {
+        if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
+          download(res.headers.location);
+          return;
+        }
+        
+        if (res.statusCode !== 200) {
+          file.close();
+          fs.unlinkSync(destPath);
+          reject(new Error(`Server status ${res.statusCode}`));
+          return;
+        }
+        
+        const totalBytes = parseInt(res.headers['content-length'], 10) || 0;
+        let downloadedBytes = 0;
+        
+        res.on('data', (chunk) => {
+          downloadedBytes += chunk.length;
+          const percent = totalBytes ? Math.round((downloadedBytes / totalBytes) * 100) : 0;
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('download-progress', {
+              filename: 'Обновление лаунчера',
+              percent: percent,
+              downloadedMb: (downloadedBytes / 1024 / 1024).toFixed(1),
+              totalMb: (totalBytes / 1024 / 1024).toFixed(1),
+              speedMb: 0,
+              timeLeftSec: -1
+            });
+          }
+        });
+        
+        res.pipe(file);
+        
+        file.on('finish', () => {
+          file.close();
+          console.log('[Updater] Скачивание завершено. Запуск установщика...');
+          
+          // Запускаем установщик в отдельном процессе
+          const child = spawn(destPath, [], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+          
+          // Закрываем лаунчер
+          app.quit();
+          resolve();
+        });
+      }).on('error', (err) => {
+        file.close();
+        if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
+        reject(err);
+      });
+    }
+    
+    download(url);
+  });
 });
 
 // --- IPC: Версии (заглушка, реализация в Этапе 4) ---
