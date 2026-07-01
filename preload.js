@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Удаление кастомной сборки
   deleteVersion: (versionId) => ipcRenderer.invoke('delete-version', { versionId }),
 
+  // Выбор папки на диске
+  selectDirectory: () => ipcRenderer.invoke('select-directory'),
+
   // События запуска игры (прогресс, логи, статус)
   onProgress: (callback) => ipcRenderer.on('launch-progress', (e, data) => callback(data)),
   onDownloadStatus: (callback) => ipcRenderer.on('download-status', (e, data) => callback(data)),

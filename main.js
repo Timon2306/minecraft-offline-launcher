@@ -100,6 +100,17 @@ ipcMain.handle('save-config', async (event, data) => {
   return data;
 });
 
+ipcMain.handle('select-directory', async () => {
+  const { dialog } = require('electron');
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory']
+  });
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0];
+  }
+  return null;
+});
+
 // --- IPC: Версии (заглушка, реализация в Этапе 4) ---
 ipcMain.handle('get-versions', async () => {
   if (versionManager) return versionManager.getVersions();

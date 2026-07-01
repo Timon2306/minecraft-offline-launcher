@@ -1,6 +1,6 @@
 {
   "name": "cristalix-offline-launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Оффлайн-лаунчер Minecraft с Glassmorphism UI и изоляцией сборок",
   "main": "main.js",
   "scripts": {
@@ -19,8 +19,8 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.cristalix.launcher",
-    "productName": "Cristalix Offline Launcher",
+    "appId": "com.minecraft.launcher",
+    "productName": "Minecraft Offline Launcher",
     "win": {
       "icon": "src/icon.png",
       "target": [

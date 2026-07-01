@@ -30,6 +30,8 @@ const ramSlider = document.getElementById('ram-slider');
 const ramInput = document.getElementById('ram-input');
 const jvmArgsInput = document.getElementById('jvm-args-input');
 const languageSelect = document.getElementById('language-select');
+const gameDirInput = document.getElementById('game-dir-input');
+const browseGameDirBtn = document.getElementById('browse-game-dir-btn');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
 const debugOverlay = document.getElementById('debug-overlay');
 
@@ -80,7 +82,10 @@ const TRANSLATIONS = {
     error: "Ошибка",
     close: "Закрыть",
     nicknamePlaceholder: "Никнейм",
-    tabCatalog: "Моды и сборки"
+    tabCatalog: "Моды и сборки",
+    gameDirLabel: "Папка игры",
+    gameDirHint: "При смене папки игры старые моды и сборки не переносятся автоматически.",
+    browseBtn: "Обзор..."
   },
   en: {
     play: "PLAY",
@@ -103,7 +108,10 @@ const TRANSLATIONS = {
     error: "Error",
     close: "Close",
     nicknamePlaceholder: "Nickname",
-    tabCatalog: "Mods & Packs"
+    tabCatalog: "Mods & Packs",
+    gameDirLabel: "Game Folder",
+    gameDirHint: "Changing game folder won't transfer existing mods and versions automatically.",
+    browseBtn: "Browse..."
   }
 };
 
@@ -136,6 +144,13 @@ const applyLanguage = (lang) => {
   
   const langLabel = document.getElementById('lbl-language');
   if (langLabel) langLabel.textContent = t.langLabel;
+
+  const lblGameDir = document.getElementById('lbl-game-directory');
+  if (lblGameDir) lblGameDir.textContent = t.gameDirLabel;
+  const lblGameDirHint = document.getElementById('lbl-game-directory-hint');
+  if (lblGameDirHint) lblGameDirHint.textContent = t.gameDirHint;
+  const btnBrowse = document.getElementById('browse-game-dir-btn');
+  if (btnBrowse) btnBrowse.textContent = t.browseBtn;
   
   saveSettingsBtn.textContent = t.saveBtn;
 
@@ -228,17 +243,27 @@ ramInput.addEventListener('change', (e) => {
   ramSlider.value = Math.round(val / 1024);
 });
 
+// Кнопка выбора папки игры
+browseGameDirBtn.addEventListener('click', async () => {
+  const selectedPath = await API.selectDirectory();
+  if (selectedPath) {
+    gameDirInput.value = selectedPath;
+  }
+});
+
 // Сохранение настроек из модалки
 saveSettingsBtn.addEventListener('click', async () => {
   const ram = parseInt(ramInput.value) || 4096;
   const jvmArgs = jvmArgsInput.value.trim();
   const language = languageSelect.value;
+  const gameDirectory = gameDirInput.value;
 
   config.ram = ram;
   config.jvmArgs = jvmArgs;
   config.language = language;
+  config.gameDirectory = gameDirectory;
 
-  await API.saveConfig({ ram, jvmArgs, language });
+  await API.saveConfig({ ram, jvmArgs, language, gameDirectory });
   applyLanguage(language);
   closeSettings();
 });
@@ -643,6 +668,12 @@ API.onLaunchData((data) => {
 API.onLaunchClose((code) => {
   console.log(`Игра закрылась с кодом ${code}`);
   resetPlayButton();
+  
+  if (code && code !== 0) {
+    showError(currentLang === 'ru' 
+      ? `Игра аварийно закрылась (код ${code}). Нажмите Ctrl+Shift+D для просмотра логов.`
+      : `Game crashed (code ${code}). Press Ctrl+Shift+D to view logs.`);
+  }
   
   // Возобновляем рендеринг фона при возвращении
   if (backgroundFluid) {
@@ -1128,6 +1159,7 @@ const init = async () => {
     ramSlider.value = Math.round(savedRamMb / 1024);
     
     jvmArgsInput.value = config.jvmArgs || '';
+    gameDirInput.value = config.gameDirectory || '';
     snapshotsToggle.checked = config.showSnapshots || false;
     
     // Инициализация языка
