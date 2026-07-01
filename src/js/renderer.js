@@ -258,6 +258,8 @@ saveSettingsBtn.addEventListener('click', async () => {
   const language = languageSelect.value;
   const gameDirectory = gameDirInput.value;
 
+  const directoryChanged = config.gameDirectory !== gameDirectory;
+
   config.ram = ram;
   config.jvmArgs = jvmArgs;
   config.language = language;
@@ -265,6 +267,12 @@ saveSettingsBtn.addEventListener('click', async () => {
 
   await API.saveConfig({ ram, jvmArgs, language, gameDirectory });
   applyLanguage(language);
+  
+  if (directoryChanged) {
+    console.log(`[Renderer] Папка игры изменена. Перезагрузка версий из: ${gameDirectory}`);
+    await initVersions();
+  }
+  
   closeSettings();
 });
 
