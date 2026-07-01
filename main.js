@@ -171,19 +171,21 @@ ipcMain.handle('download-app-update', async (event, { url }) => {
         res.pipe(file);
         
         file.on('finish', () => {
-          file.close();
-          console.log('[Updater] Скачивание завершено. Запуск установщика...');
-          
-          // Запускаем установщик в отдельном процессе
-          const child = spawn(destPath, [], {
-            detached: true,
-            stdio: 'ignore'
+          file.close((err) => {
+            if (err) console.error('[Updater] Ошибка закрытия файла:', err);
+            console.log('[Updater] Скачивание завершено. Запуск установщика...');
+            
+            // Запускаем установщик в отдельном процессе
+            const child = spawn(destPath, [], {
+              detached: true,
+              stdio: 'ignore'
+            });
+            child.unref();
+            
+            // Немедленно выходим из приложения
+            const { app } = require('electron');
+            app.exit(0);
           });
-          child.unref();
-          
-          // Закрываем лаунчер
-          app.quit();
-          resolve();
         });
       }).on('error', (err) => {
         file.close();
