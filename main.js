@@ -118,6 +118,7 @@ ipcMain.handle('select-directory', async () => {
 
 ipcMain.handle('download-app-update', async (event, { url }) => {
   const os = require('os');
+  const fs = require('fs');
   const https = require('https');
   const { spawn } = require('child_process');
   
