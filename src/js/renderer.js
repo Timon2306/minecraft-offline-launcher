@@ -41,6 +41,7 @@ const lblUpdateDesc = document.getElementById('lbl-update-desc');
 
 let updateDownloadUrl = '';
 let latestVersionStr = '';
+let lastLaunchTime = 0;
 
 // Навигация и Каталог модов
 const modsBtn = document.getElementById('mods-btn');
@@ -512,6 +513,8 @@ playButton.addEventListener('click', async () => {
   // Сохраняем имя игрока в конфиг
   await API.saveConfig({ nickname });
 
+  lastLaunchTime = Date.now();
+
   // Запуск через IPC
   try {
     const result = await API.launchGame({
@@ -691,14 +694,35 @@ API.onLaunchData((data) => {
 });
 
 // Закрытие игры (возврат в лаунчер)
-API.onLaunchClose((code) => {
+API.onLaunchClose((data) => {
+  const code = (data && typeof data === 'object') ? data.code : data;
+  const crashReport = (data && typeof data === 'object') ? data.crashReport : null;
+
   console.log(`Игра закрылась с кодом ${code}`);
   resetPlayButton();
   
+  const duration = lastLaunchTime ? (Date.now() - lastLaunchTime) : 0;
+  console.log(`Время игры составило: ${(duration / 1000).toFixed(1)} сек`);
+  
   if (code && code !== 0) {
-    showError(currentLang === 'ru' 
-      ? `Игра аварийно закрылась (код ${code}). Нажмите Ctrl+Shift+D для просмотра логов.`
-      : `Game crashed (code ${code}). Press Ctrl+Shift+D to view logs.`);
+    // Показываем ошибку только если есть реальный краш-репорт ИЛИ если игра проработала меньше 15 секунд (вылетела при запуске)
+    const isRealCrash = crashReport || (duration < 15000);
+    
+    if (isRealCrash) {
+      if (crashReport) {
+        // Показываем первую строчку описания ошибки
+        const firstLine = crashReport.split('\n')[0] || '';
+        showError(currentLang === 'ru'
+          ? `Вылет игры! ${firstLine}`
+          : `Game crash! ${firstLine}`);
+      } else {
+        showError(currentLang === 'ru' 
+          ? `Ошибка запуска игры (код ${code}). Нажмите Ctrl+Shift+D для логов.`
+          : `Game launch error (code ${code}). Press Ctrl+Shift+D for logs.`);
+      }
+    } else {
+      console.log('[Launcher] Игра закрылась с ненулевым кодом, но вероятно это просто краш при закрытии (sound/shutdown hook), игнорируем.');
+    }
   }
   
   // Возобновляем рендеринг фона при возвращении
