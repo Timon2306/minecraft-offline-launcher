@@ -1211,3 +1211,355 @@ body::after {
 #create-modpack-overlay {
   z-index: 2000 !important; /* Открывается поверх каталога модов */
 }
+
+/* ==========================================================
+   РЕДИЗАЙН НАСТРОЕК (ДВУХПАНЕЛЬНЫЙ МАКЕТ С ВКЛАДКАМИ)
+   ========================================================== */
+#settings-modal.settings-expanded {
+  max-width: 680px;
+  width: 90%;
+  height: 480px;
+  max-height: 90vh;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.settings-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-sidebar {
+  width: 180px;
+  background: rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 8px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.settings-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dimmed);
+  padding: 10px 14px;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-color);
+}
+
+.settings-tab-btn.active {
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--accent-light);
+  font-weight: 600;
+}
+
+.settings-content {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+.settings-content::-webkit-scrollbar {
+  width: 6px;
+}
+.settings-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.settings-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+.settings-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-tab-content.hidden {
+  display: none !important;
+}
+
+.setting-group.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+/* ==========================================================
+   ОФОРМЛЕНИЕ MINECRAFT (ХАМЕЛЕОН)
+   ========================================================== */
+#minecraft-bg-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2;
+  overflow: hidden;
+  perspective: 400px;
+  background: #000;
+}
+
+.panorama-cube {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 512px;
+  height: 512px;
+  margin-top: -256px;
+  margin-left: -256px;
+  transform-style: preserve-3d;
+  animation: rotateCube 120s linear infinite;
+  filter: blur(4px);
+  will-change: transform;
+}
+
+@keyframes rotateCube {
+  0% { transform: rotateY(0deg) rotateX(0deg); }
+  100% { transform: rotateY(-360deg) rotateX(0deg); }
+}
+
+.panorama-cube .face {
+  position: absolute;
+  width: 513px; /* Перекрытие на 1px для устранения щелей */
+  height: 513px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.panorama-cube .face.front  { transform: rotateY(0deg) translateZ(-256px); }
+.panorama-cube .face.right  { transform: rotateY(90deg) translateZ(-256px); }
+.panorama-cube .face.back   { transform: rotateY(180deg) translateZ(-256px); }
+.panorama-cube .face.left   { transform: rotateY(-90deg) translateZ(-256px); }
+.panorama-cube .face.top    { transform: rotateX(90deg) translateZ(-256px); }
+.panorama-cube .face.bottom { transform: rotateX(-90deg) translateZ(-256px); }
+
+.minecraft-dirt-overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 64px 64px;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  filter: brightness(0.28);
+}
+
+#minecraft-logo-container {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 80%;
+}
+
+#minecraft-logo {
+  width: 480px;
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.4));
+}
+
+/* ==========================================================
+   СЕМАНТИЧЕСКОЕ ПЕРЕОПРЕДЕЛЕНИЕ СТИЛЕЙ ПОД MINECRAFT
+   ========================================================== */
+body.theme-minecraft-active {
+  background: #000;
+  font-family: 'Minecraftia', monospace !important;
+}
+
+/* Скрываем стандартный WebGL фон и старый логотип */
+body.theme-minecraft-active #bg-container,
+body.theme-minecraft-active .logo-container {
+  display: none !important;
+}
+
+/* Показываем майнкрафтовские элементы */
+body.theme-minecraft-active #minecraft-bg-container,
+body.theme-minecraft-active #minecraft-logo-container {
+  display: block !important;
+}
+
+/* Общее изменение шрифтов для всех тегов */
+body.theme-minecraft-active h1,
+body.theme-minecraft-active h2,
+body.theme-minecraft-active h3,
+body.theme-minecraft-active label,
+body.theme-minecraft-active span,
+body.theme-minecraft-active input,
+body.theme-minecraft-active select,
+body.theme-minecraft-active select option,
+body.theme-minecraft-active button {
+  font-family: 'Minecraftia', monospace !important;
+}
+
+/* Стилизация главной нижней панели */
+body.theme-minecraft-active #main-card {
+  background: rgba(16, 16, 16, 0.75) !important;
+  border: 3px solid #3c3c3c !important;
+  border-radius: 0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Стилизация инпутов и селектов под Minecraft */
+body.theme-minecraft-active input[type="text"],
+body.theme-minecraft-active input[type="number"],
+body.theme-minecraft-active select {
+  border-radius: 0 !important;
+  border: 2px solid #555555 !important;
+  background: #000 !important;
+  color: #fff !important;
+  box-shadow: inset 2px 2px 0 #222, inset -2px -2px 0 #333;
+  padding: 10px 14px !important;
+}
+
+body.theme-minecraft-active input[type="text"]:focus,
+body.theme-minecraft-active input[type="number"]:focus,
+body.theme-minecraft-active select:focus {
+  border-color: #ffffff !important;
+}
+
+/* Стилизация всех интерактивных кнопок (кроме закрытия окон и табов настроек) */
+body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(#create-modpack-close):not(.settings-tab-btn):not(#btn-minimize):not(#btn-close) {
+  background-image: var(--widgets-url) !important;
+  background-size: 256px 256px !important;
+  background-position: 0 -66px !important;
+  background-repeat: no-repeat !important;
+  background-color: transparent !important;
+  image-rendering: pixelated;
+  border: 2px solid #000 !important;
+  border-radius: 0 !important;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #555555 !important;
+  color: #e0e0e0 !important;
+  text-shadow: 2px 2px 0px #3f3f3f;
+  padding: 10px 20px !important;
+  font-size: 14px;
+  font-weight: 500 !important;
+  height: auto !important;
+  transition: none !important;
+  cursor: pointer;
+}
+
+body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(#create-modpack-close):not(.settings-tab-btn):not(#btn-minimize):not(#btn-close):hover {
+  background-position: 0 -86px !important;
+  color: #ffffa0 !important;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #555555 !important;
+}
+
+body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(#create-modpack-close):not(.settings-tab-btn):not(#btn-minimize):not(#btn-close):disabled {
+  background-position: 0 -46px !important;
+  box-shadow: inset 2px 2px 0 #555555, inset -2px -2px 0 #222222 !important;
+  color: #a0a0a0 !important;
+  text-shadow: 2px 2px 0px #222222;
+  cursor: not-allowed;
+  opacity: 1 !important;
+}
+
+/* Иконки модов и папок в стиле Minecraft */
+body.theme-minecraft-active #mods-btn,
+body.theme-minecraft-active #folder-btn {
+  border-radius: 0 !important;
+  background-image: var(--widgets-url) !important;
+  background-size: 256px 256px !important;
+  background-position: 0 -66px !important;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #555555 !important;
+  border: 2px solid #000 !important;
+  transition: none !important;
+}
+
+body.theme-minecraft-active #mods-btn:hover,
+body.theme-minecraft-active #folder-btn:hover {
+  background-position: 0 -86px !important;
+  color: #ffffa0 !important;
+}
+
+body.theme-minecraft-active #mods-btn svg,
+body.theme-minecraft-active #folder-btn svg {
+  transition: none !important;
+}
+body.theme-minecraft-active #mods-btn:hover svg,
+body.theme-minecraft-active #folder-btn:hover svg {
+  transform: none !important;
+}
+
+/* Модальные окна в стиле Minecraft */
+body.theme-minecraft-active #settings-modal,
+body.theme-minecraft-active #catalog-modal,
+body.theme-minecraft-active #create-modpack-modal {
+  background: #c6c6c6 !important;
+  border: 3px solid !important;
+  border-color: #ffffff #555555 #555555 #ffffff !important;
+  border-radius: 0 !important;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.8) !important;
+  color: #000 !important;
+}
+
+body.theme-minecraft-active .modal-header h2 {
+  color: #3f3f3f !important;
+  text-shadow: none !important;
+}
+
+body.theme-minecraft-active .settings-sidebar {
+  background: #a0a0a0 !important;
+  border-right: 2px solid #555555 !important;
+}
+
+body.theme-minecraft-active .settings-tab-btn {
+  color: #3f3f3f !important;
+  border-radius: 0 !important;
+}
+
+body.theme-minecraft-active .settings-tab-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #000 !important;
+}
+
+body.theme-minecraft-active .settings-tab-btn.active {
+  background: #707070 !important;
+  color: #fff !important;
+  border: 2px solid #000 !important;
+  box-shadow: inset -2px -2px 0 #ffffff, inset 2px 2px 0 #555555 !important;
+}
+
+body.theme-minecraft-active .settings-content::-webkit-scrollbar-thumb {
+  background: #707070 !important;
+  border-radius: 0 !important;
+  border: 1px solid #000 !important;
+}
+
+body.theme-minecraft-active .settings-tab-content label {
+  color: #303030 !important;
+  font-weight: bold;
+}
+
+body.theme-minecraft-active .modal-footer {
+  border-top: 2px solid #555555 !important;
+  background: #a0a0a0 !important;
+}

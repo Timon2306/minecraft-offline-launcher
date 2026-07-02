@@ -46,6 +46,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Скачивание и установка обновления лаунчера
   downloadAppUpdate: (url) => ipcRenderer.invoke('download-app-update', { url }),
 
+  // Извлечение темы оформления версии
+  extractVersionTheme: (versionId) => ipcRenderer.invoke('extract-version-theme', { versionId }),
+
   // События запуска игры (прогресс, логи, статус)
   onProgress: (callback) => ipcRenderer.on('launch-progress', (e, data) => callback(data)),
   onDownloadStatus: (callback) => ipcRenderer.on('download-status', (e, data) => callback(data)),

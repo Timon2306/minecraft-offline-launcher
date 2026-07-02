@@ -472,6 +472,15 @@ ipcMain.handle('delete-version', async (event, { versionId }) => {
   }
 });
 
+// --- IPC: Извлечение ассетов оформления из .jar ---
+ipcMain.handle('extract-version-theme', async (event, { versionId }) => {
+  console.log('[IPC] extract-version-theme', versionId);
+  const themeExtractor = require('./lib/theme-extractor');
+  const config = configManager ? configManager.getConfig() : {};
+  const gameDir = config.gameDirectory;
+  return await themeExtractor.extractVersionTheme(gameDir, versionId);
+});
+
 // --- Создание иконки в системном трее ---
 function createTray() {
   const iconPath = path.join(__dirname, 'src', 'icon.png');

@@ -39,6 +39,13 @@ const updateBlock = document.getElementById('update-block');
 const installUpdateBtn = document.getElementById('install-update-btn');
 const lblUpdateDesc = document.getElementById('lbl-update-desc');
 
+const themeModeSelect = document.getElementById('theme-mode-select');
+const hideOnLaunchCheckbox = document.getElementById('hide-on-launch-checkbox');
+
+const minecraftBgContainer = document.getElementById('minecraft-bg-container');
+const minecraftLogoContainer = document.getElementById('minecraft-logo-container');
+const minecraftLogo = document.getElementById('minecraft-logo');
+
 let updateDownloadUrl = '';
 let latestVersionStr = '';
 let lastLaunchTime = 0;
@@ -232,6 +239,29 @@ settingsOverlay.addEventListener('click', (e) => {
   if (e.target === settingsOverlay) closeSettings();
 });
 
+// Переключение вкладок в меню настроек
+const tabButtons = document.querySelectorAll('.settings-tab-btn');
+const tabContents = document.querySelectorAll('.settings-tab-content');
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabId = btn.getAttribute('data-tab');
+    
+    // Снимаем active со всех вкладок-кнопок
+    tabButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Показываем только выбранную вкладку
+    tabContents.forEach(c => {
+      if (c.id === `tab-${tabId}`) {
+        c.classList.remove('hidden');
+      } else {
+        c.classList.add('hidden');
+      }
+    });
+  });
+});
+
 // Закрытие окон на Escape
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -276,6 +306,8 @@ saveSettingsBtn.addEventListener('click', async () => {
   const jvmArgs = jvmArgsInput.value.trim();
   const language = languageSelect.value;
   const gameDirectory = gameDirInput.value;
+  const themeMode = themeModeSelect.value;
+  const hideOnLaunch = hideOnLaunchCheckbox.checked;
 
   const directoryChanged = config.gameDirectory !== gameDirectory;
 
@@ -283,9 +315,14 @@ saveSettingsBtn.addEventListener('click', async () => {
   config.jvmArgs = jvmArgs;
   config.language = language;
   config.gameDirectory = gameDirectory;
+  config.themeMode = themeMode;
+  config.hideOnLaunch = hideOnLaunch;
 
-  await API.saveConfig({ ram, jvmArgs, language, gameDirectory });
+  await API.saveConfig({ ram, jvmArgs, language, gameDirectory, themeMode, hideOnLaunch });
   applyLanguage(language);
+  
+  // Применяем тему
+  applyThemeMode(themeMode, selectedVersionId);
   
   if (directoryChanged) {
     console.log(`[Renderer] Папка игры изменена. Перезагрузка версий из: ${gameDirectory}`);
@@ -317,6 +354,11 @@ const selectVersion = (id, type, displayText) => {
 
   // Сохранить выбранную версию
   API.saveConfig({ selectedVersion: id });
+  
+  // Обновляем тему хамелеона
+  if (config.themeMode === 'auto') {
+    applyThemeMode('auto', id);
+  }
 };
 
 // Загрузка версий с бэкенда (Mojang API + кэш)
@@ -684,12 +726,14 @@ API.onLaunchData((data) => {
     backgroundFluid.pause();
   }
   
-  // Авто-свернуть лаунчер через 3 секунды
-  if (!autoMinTimer) {
-    autoMinTimer = setTimeout(() => {
-      API.minimizeWindow();
-      autoMinTimer = null;
-    }, 3000);
+  // Авто-свернуть лаунчер через 3 секунды, если это включено в настройках
+  if (config.hideOnLaunch !== false) {
+    if (!autoMinTimer) {
+      autoMinTimer = setTimeout(() => {
+        API.minimizeWindow();
+        autoMinTimer = null;
+      }, 3000);
+    }
   }
 });
 
@@ -1258,6 +1302,10 @@ const init = async () => {
     const savedLang = config.language || 'ru';
     languageSelect.value = savedLang;
     applyLanguage(savedLang);
+
+    // Инициализация темы и свертывания
+    themeModeSelect.value = config.themeMode || 'custom';
+    hideOnLaunchCheckbox.checked = config.hideOnLaunch !== false;
   } catch (err) {
     console.error('Не удалось загрузить конфиг:', err);
   }
@@ -1265,7 +1313,10 @@ const init = async () => {
   // 3. Загрузка версий
   await initVersions();
 
-  // 4. Проверка обновлений на GitHub
+  // 4. Применение сохраненной темы
+  applyThemeMode(config.themeMode || 'custom', selectedVersionId);
+
+  // 5. Проверка обновлений на GitHub
   checkUpdates();
 };
 
@@ -1326,5 +1377,99 @@ installUpdateBtn.addEventListener('click', async () => {
     statusText.textContent = currentLang === 'ru' ? `Не удалось обновить: ${err.message}` : `Update failed: ${err.message}`;
   }
 });
+
+// Функция для применения темы оформления (Кастомная / Авто-Майнкрафт)
+async function applyThemeMode(mode, versionId) {
+  console.log(`[Theme] Применение режима темы: ${mode}, версия: ${versionId}`);
+  
+  if (mode === 'custom' || !versionId) {
+    // 1. Отключаем майнкрафт-тему
+    document.body.classList.remove('theme-minecraft-active');
+    
+    // Скрываем контейнеры
+    minecraftBgContainer.style.display = 'none';
+    minecraftLogoContainer.style.display = 'none';
+    
+    // Возобновляем WebGL-анимацию
+    if (backgroundFluid) {
+      backgroundFluid.play();
+    }
+    
+    // Очищаем переменные CSS для widgets.png
+    document.documentElement.style.removeProperty('--widgets-url');
+    return;
+  }
+  
+  // 2. Включаем майнкрафт-тему
+  document.body.classList.add('theme-minecraft-active');
+  
+  // Приостанавливаем WebGL-анимацию для экономии производительности
+  if (backgroundFluid) {
+    backgroundFluid.pause();
+  }
+  
+  // Показываем контейнеры
+  minecraftBgContainer.style.display = 'block';
+  minecraftLogoContainer.style.display = 'block';
+  
+  try {
+    // Запрашиваем извлечение текстур через API
+    const themeData = await API.extractVersionTheme(versionId);
+    
+    if (themeData) {
+      // 2.1 Устанавливаем логотип
+      if (themeData.logo) {
+        minecraftLogo.src = themeData.logo;
+      }
+      
+      // 2.2 Устанавливаем widgets.png (кнопки)
+      if (themeData.widgets) {
+        document.documentElement.style.setProperty('--widgets-url', `url(${themeData.widgets})`);
+      }
+      
+      // 2.3 Динамически регистрируем шрифт, если он прилетел из бэкенда
+      if (themeData.font) {
+        try {
+          const font = new FontFace('Minecraftia', `url(${themeData.font})`);
+          const loadedFont = await font.load();
+          document.fonts.add(loadedFont);
+          console.log('[Theme] Шрифт Minecraftia успешно загружен');
+        } catch (fontErr) {
+          console.error('[Theme] Ошибка регистрации шрифта:', fontErr);
+        }
+      }
+      
+      // 2.4 Устанавливаем 3D панораму или блок земли
+      const faces = ['front', 'right', 'back', 'left', 'top', 'bottom'];
+      const panoramaCube = document.querySelector('.panorama-cube');
+      const dirtOverlay = document.querySelector('.minecraft-dirt-overlay');
+      
+      if (themeData.panorama && themeData.panorama.length === 6) {
+        // Показываем 3D куб
+        panoramaCube.style.display = 'block';
+        dirtOverlay.style.display = 'none';
+        
+        faces.forEach((face, index) => {
+          const faceEl = panoramaCube.querySelector(`.face.${face}`);
+          if (faceEl) {
+            faceEl.style.backgroundImage = `url(${themeData.panorama[index]})`;
+          }
+        });
+      } else if (themeData.dirt) {
+        // Показываем плитку земли
+        panoramaCube.style.display = 'none';
+        dirtOverlay.style.display = 'block';
+        dirtOverlay.style.backgroundImage = `url(${themeData.dirt})`;
+      } else {
+        // Если панорамы нет (например, ошибка скачивания), прячем куб и включаем фоллбек
+        panoramaCube.style.display = 'none';
+        dirtOverlay.style.display = 'block';
+        dirtOverlay.style.backgroundImage = 'none'; // Будет просто темный экран
+      }
+    }
+  } catch (err) {
+    console.error('[Theme] Не удалось загрузить тему версии:', err);
+  }
+}
 
 init();
