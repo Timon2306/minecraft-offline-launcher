@@ -56,5 +56,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLaunchError: (callback) => ipcRenderer.on('launch-error', (e, msg) => callback(msg)),
   onLaunchDebug: (callback) => ipcRenderer.on('launch-debug', (e, data) => callback(data)),
   onLaunchData: (callback) => ipcRenderer.on('launch-data', (e, data) => callback(data)),
-  onDownloadProgress: (callback) => ipcRenderer.on('download-progress', (e, data) => callback(data))
+  onDownloadProgress: (callback) => ipcRenderer.on('download-progress', (e, data) => callback(data)),
+  onLaunchStarted: (callback) => ipcRenderer.on('launch-started', () => callback())
 });

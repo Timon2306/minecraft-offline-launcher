@@ -43,8 +43,6 @@ const themeModeSelect = document.getElementById('theme-mode-select');
 const hideOnLaunchCheckbox = document.getElementById('hide-on-launch-checkbox');
 
 const minecraftBgContainer = document.getElementById('minecraft-bg-container');
-const minecraftLogoContainer = document.getElementById('minecraft-logo-container');
-const minecraftLogo = document.getElementById('minecraft-logo');
 
 let updateDownloadUrl = '';
 let latestVersionStr = '';
@@ -399,6 +397,7 @@ const initVersions = async () => {
       
       // Имя версии
       const textSpan = document.createElement('span');
+      textSpan.className = 'version-item-title';
       textSpan.textContent = `${formatVersionName(v.id)}${badge}`;
       item.appendChild(textSpan);
       
@@ -577,6 +576,8 @@ const resetPlayButton = () => {
   playButton.disabled = false;
   playButton.textContent = 'ИГРАТЬ';
   playButton.className = ''; // Сброс классов glow
+  playButton.style.backgroundColor = '';
+  playButton.style.borderColor = '';
   progressContainer.style.display = 'none';
 };
 
@@ -768,6 +769,16 @@ API.onLaunchClose((data) => {
       console.log('[Launcher] Игра закрылась с ненулевым кодом, но вероятно это просто краш при закрытии (sound/shutdown hook), игнорируем.');
     }
   }
+
+  // Обновляем панораму с небольшой задержкой (1 секунда).
+  // Причина: Windows может удерживать файловую блокировку .jar файла еще некоторое время 
+  // после того как процесс Java формально завершился. Если попытаться извлечь панораму мгновенно,
+  // мы получим ошибку доступа (EPERM/EBUSY) и лаунчер сбросится на дефолтную панораму.
+  if (selectedVersionId) {
+    setTimeout(() => {
+      loadVersionTheme(selectedVersionId);
+    }, 1000);
+  }
   
   // Возобновляем рендеринг фона при возвращении
   if (backgroundFluid) {
@@ -789,6 +800,12 @@ API.onLaunchError((msg) => {
     clearTimeout(autoMinTimer);
     autoMinTimer = null;
   }
+  
+  // Обновляем панораму на случай, если часть ресурсов успела скачаться
+  if (selectedVersionId) {
+    loadVersionTheme(selectedVersionId);
+  }
+
   showError(msg);
 });
 
@@ -1261,6 +1278,106 @@ const loadCatalogData = async (query = '', type = 'modpack') => {
   }
 };
 
+// Функция для применения темы оформления (Кастомная / Авто-Майнкрафт)
+async function applyThemeMode(mode, versionId) {
+  console.log(`[Theme] Применение режима темы: ${mode}, версия: ${versionId}`);
+
+  if (mode === 'custom' || !versionId) {
+    // 1. Отключаем майнкрафт-тему
+    document.body.classList.remove('theme-minecraft-active');
+    
+    // Скрываем контейнеры
+    minecraftBgContainer.style.display = 'none';
+    
+    // Возобновляем WebGL-анимацию
+    if (backgroundFluid) {
+      backgroundFluid.play();
+    }
+    
+    // Очищаем переменные CSS для widgets.png
+    document.documentElement.style.removeProperty('--widgets-url');
+    
+    return;
+  }
+  
+  // 2. Включаем майнкрафт-тему
+  document.body.classList.add('theme-minecraft-active');
+  
+  // Приостанавливаем WebGL-анимацию для экономии производительности
+  if (backgroundFluid) {
+    backgroundFluid.pause();
+  }
+  
+  // Показываем контейнеры
+  minecraftBgContainer.style.display = 'block';
+  
+  try {
+    // Запрашиваем извлечение текстур через API
+    const themeData = await API.extractVersionTheme(versionId);
+    
+    if (themeData) {
+      
+      // 2.2 Устанавливаем widgets.png (кнопки)
+      if (themeData.widgets) {
+        document.documentElement.style.setProperty('--widgets-url', `url(${themeData.widgets})`);
+      }
+      
+      // 2.3 Динамически регистрируем шрифт, если он прилетел из бэкенда
+      if (themeData.font) {
+        try {
+          const font = new FontFace('Minecraftia', `url(${themeData.font})`);
+          const loadedFont = await font.load();
+          document.fonts.add(loadedFont);
+          console.log('[Theme] Шрифт Minecraftia успешно загружен');
+        } catch (fontErr) {
+          console.error('[Theme] Ошибка регистрации шрифта:', fontErr);
+        }
+      }
+      
+      // 2.4 Устанавливаем 3D панораму или блок земли
+      const faces = ['front', 'right', 'back', 'left', 'top', 'bottom'];
+      const panoramaCube = document.querySelector('.panorama-cube');
+      const dirtOverlay = document.querySelector('.minecraft-dirt-overlay');
+      
+      // Плавно замыливаем старую панораму перед переключением
+      minecraftBgContainer.classList.add('blur-transition');
+      await new Promise(resolve => setTimeout(resolve, 250));
+      
+      if (themeData.panorama && themeData.panorama.length === 6) {
+        // Включаем 3D-куб для настоящей панорамы!
+        panoramaCube.style.display = 'block';
+        dirtOverlay.style.display = 'none';
+        minecraftBgContainer.style.backgroundImage = 'none';
+        
+        panoramaCube.querySelector('.face.front').style.backgroundImage = `url(${themeData.panorama[0]})`;
+        panoramaCube.querySelector('.face.right').style.backgroundImage = `url(${themeData.panorama[1]})`;
+        panoramaCube.querySelector('.face.back').style.backgroundImage = `url(${themeData.panorama[2]})`;
+        panoramaCube.querySelector('.face.left').style.backgroundImage = `url(${themeData.panorama[3]})`;
+        panoramaCube.querySelector('.face.top').style.backgroundImage = `url(${themeData.panorama[4]})`;
+        panoramaCube.querySelector('.face.bottom').style.backgroundImage = `url(${themeData.panorama[5]})`;
+      } else if (themeData.dirt) {
+        // Показываем плитку земли для старых версий
+        panoramaCube.style.display = 'none';
+        dirtOverlay.style.display = 'block';
+        minecraftBgContainer.style.backgroundImage = 'none';
+        dirtOverlay.style.backgroundImage = `url(${themeData.dirt})`;
+      } else {
+        // Фоллбек на локальную статическую картинку
+        panoramaCube.style.display = 'none';
+        dirtOverlay.style.display = 'none';
+        minecraftBgContainer.style.backgroundImage = "url('assets/default_theme/panorama_0.png')";
+        minecraftBgContainer.style.backgroundSize = 'cover';
+      }
+      
+      // Убираем замыливание плавно
+      minecraftBgContainer.classList.remove('blur-transition');
+    }
+  } catch (e) {
+    console.error('Ошибка применения темы:', e);
+    minecraftBgContainer.classList.remove('blur-transition');
+  }
+}
+
 // ==========================================================
 // 7. ИНИЦИАЛИЗАЦИЯ ПРИ ЗАПУСКЕ
 // ==========================================================
@@ -1378,98 +1495,26 @@ installUpdateBtn.addEventListener('click', async () => {
   }
 });
 
-// Функция для применения темы оформления (Кастомная / Авто-Майнкрафт)
-async function applyThemeMode(mode, versionId) {
-  console.log(`[Theme] Применение режима темы: ${mode}, версия: ${versionId}`);
-  
-  if (mode === 'custom' || !versionId) {
-    // 1. Отключаем майнкрафт-тему
-    document.body.classList.remove('theme-minecraft-active');
+// Когда игра успешно запущена (скачивание завершено) - обновляем панораму в фоне!
+if (window.electronAPI.onLaunchStarted) {
+  window.electronAPI.onLaunchStarted(() => {
+    console.log('[Renderer] Игра запущена, процесс стартовал!');
     
-    // Скрываем контейнеры
-    minecraftBgContainer.style.display = 'none';
-    minecraftLogoContainer.style.display = 'none';
+    // Меняем UI, чтобы пользователь понимал, что игра уже открывается
+    statusText.textContent = currentLang === 'ru' ? 'Игра запущена! Ожидание окна...' : 'Game started! Waiting for window...';
+    playButton.textContent = currentLang === 'ru' ? 'В ИГРЕ' : 'IN GAME';
+    playButton.classList.remove('pulse-glow');
+    playButton.style.backgroundColor = 'rgba(46, 204, 113, 0.2)'; // Зеленоватый оттенок
+    playButton.style.borderColor = '#2ecc71';
     
-    // Возобновляем WebGL-анимацию
-    if (backgroundFluid) {
-      backgroundFluid.play();
+    if (selectedVersionId) {
+      window.electronAPI.extractVersionTheme(selectedVersionId).then(applyThemeData => {
+        // Заново загружаем тему текущей версии, так как ассеты теперь скачаны
+        loadVersionTheme(selectedVersionId);
+      });
     }
-    
-    // Очищаем переменные CSS для widgets.png
-    document.documentElement.style.removeProperty('--widgets-url');
-    return;
-  }
-  
-  // 2. Включаем майнкрафт-тему
-  document.body.classList.add('theme-minecraft-active');
-  
-  // Приостанавливаем WebGL-анимацию для экономии производительности
-  if (backgroundFluid) {
-    backgroundFluid.pause();
-  }
-  
-  // Показываем контейнеры
-  minecraftBgContainer.style.display = 'block';
-  minecraftLogoContainer.style.display = 'block';
-  
-  try {
-    // Запрашиваем извлечение текстур через API
-    const themeData = await API.extractVersionTheme(versionId);
-    
-    if (themeData) {
-      // 2.1 Устанавливаем логотип
-      if (themeData.logo) {
-        minecraftLogo.src = themeData.logo;
-      }
-      
-      // 2.2 Устанавливаем widgets.png (кнопки)
-      if (themeData.widgets) {
-        document.documentElement.style.setProperty('--widgets-url', `url(${themeData.widgets})`);
-      }
-      
-      // 2.3 Динамически регистрируем шрифт, если он прилетел из бэкенда
-      if (themeData.font) {
-        try {
-          const font = new FontFace('Minecraftia', `url(${themeData.font})`);
-          const loadedFont = await font.load();
-          document.fonts.add(loadedFont);
-          console.log('[Theme] Шрифт Minecraftia успешно загружен');
-        } catch (fontErr) {
-          console.error('[Theme] Ошибка регистрации шрифта:', fontErr);
-        }
-      }
-      
-      // 2.4 Устанавливаем 3D панораму или блок земли
-      const faces = ['front', 'right', 'back', 'left', 'top', 'bottom'];
-      const panoramaCube = document.querySelector('.panorama-cube');
-      const dirtOverlay = document.querySelector('.minecraft-dirt-overlay');
-      
-      if (themeData.panorama && themeData.panorama.length === 6) {
-        // Показываем 3D куб
-        panoramaCube.style.display = 'block';
-        dirtOverlay.style.display = 'none';
-        
-        faces.forEach((face, index) => {
-          const faceEl = panoramaCube.querySelector(`.face.${face}`);
-          if (faceEl) {
-            faceEl.style.backgroundImage = `url(${themeData.panorama[index]})`;
-          }
-        });
-      } else if (themeData.dirt) {
-        // Показываем плитку земли
-        panoramaCube.style.display = 'none';
-        dirtOverlay.style.display = 'block';
-        dirtOverlay.style.backgroundImage = `url(${themeData.dirt})`;
-      } else {
-        // Если панорамы нет (например, ошибка скачивания), прячем куб и включаем фоллбек
-        panoramaCube.style.display = 'none';
-        dirtOverlay.style.display = 'block';
-        dirtOverlay.style.backgroundImage = 'none'; // Будет просто темный экран
-      }
-    }
-  } catch (err) {
-    console.error('[Theme] Не удалось загрузить тему версии:', err);
-  }
+  });
 }
 
 init();
+

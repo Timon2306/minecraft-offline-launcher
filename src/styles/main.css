@@ -1311,48 +1311,57 @@ body::after {
   height: 100vh;
   z-index: -2;
   overflow: hidden;
-  perspective: 400px;
+  perspective: 50vmax;
   perspective-origin: 50% 50%;
   background: #000;
+  transition: filter 0.25s ease, opacity 0.25s ease;
+}
+
+#minecraft-bg-container.blur-transition {
+  filter: blur(20px) brightness(0.5);
+  opacity: 0.5;
 }
 
 .panorama-cube {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 1000px;
-  height: 1000px;
-  margin-top: -500px;
-  margin-left: -500px;
+  width: 100vmax;
+  height: 100vmax;
+  margin-top: -50vmax;
+  margin-left: -50vmax;
   transform-style: preserve-3d;
-  /* Центрируем куб относительно камеры на Z = 400px */
-  transform: translateZ(400px);
-  animation: rotateCube 120s linear infinite;
-  filter: blur(4px);
+  /* Центрируем куб относительно камеры на Z = 50vmax (ровно 90 градусов FOV на любом экране) */
+  transform: translateZ(50vmax);
+  animation: rotateCube 100s linear infinite;
   will-change: transform;
 }
 
 @keyframes rotateCube {
-  0% { transform: translateZ(400px) rotateX(-12deg) rotateY(0deg); }
-  100% { transform: translateZ(400px) rotateX(-12deg) rotateY(-360deg); }
+  /* Вращаем в положительную сторону, чтобы камера крутилась вправо, как в ваниле */
+  0% { transform: translateZ(50vmax) rotateX(-12deg) rotateY(0deg); }
+  100% { transform: translateZ(50vmax) rotateX(-12deg) rotateY(360deg); }
 }
 
 .panorama-cube .face {
   position: absolute;
-  width: 1002px; /* Перекрытие на 2px для устранения щелей на швах */
-  height: 1002px;
+  width: 100vmax;
+  height: 100vmax;
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
   image-rendering: pixelated;
+  backface-visibility: hidden; /* Скрываем заднюю сторону для устранения артефактов рендера */
+  outline: 1px solid transparent; /* Хак для сглаживания швов в некоторых браузерах */
 }
 
-.panorama-cube .face.front  { transform: rotateY(0deg) translateZ(-500px); }
-.panorama-cube .face.right  { transform: rotateY(90deg) translateZ(-500px); }
-.panorama-cube .face.back   { transform: rotateY(180deg) translateZ(-500px); }
-.panorama-cube .face.left   { transform: rotateY(-90deg) translateZ(-500px); }
-.panorama-cube .face.top    { transform: rotateX(90deg) translateZ(-500px); }
-.panorama-cube .face.bottom { transform: rotateX(-90deg) translateZ(-500px); }
+/* Слегка растягиваем грани (scale 1.005), чтобы текстуры накладывались друг на друга без физического пересечения плоскостей (которое вызывает Z-fighting и чёрные полосы) */
+.panorama-cube .face.front  { transform: rotateY(0deg) translateZ(-50vmax) scale(1.005); }
+.panorama-cube .face.right  { transform: rotateY(-90deg) translateZ(-50vmax) scale(1.005); }
+.panorama-cube .face.back   { transform: rotateY(180deg) translateZ(-50vmax) scale(1.005); }
+.panorama-cube .face.left   { transform: rotateY(90deg) translateZ(-50vmax) scale(1.005); }
+.panorama-cube .face.top    { transform: rotateX(-90deg) translateZ(-50vmax) scale(1.005); }
+.panorama-cube .face.bottom { transform: rotateX(90deg) translateZ(-50vmax) scale(1.005); }
 
 .minecraft-dirt-overlay {
   display: none;
@@ -1367,27 +1376,6 @@ body::after {
   filter: brightness(0.28);
 }
 
-#minecraft-logo-container {
-  position: fixed;
-  top: 8%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1;
-  pointer-events: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  max-width: 80%;
-}
-
-#minecraft-logo {
-  width: 320px;
-  max-width: 100%;
-  height: auto;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.4));
-}
-
 /* ==========================================================
    СЕМАНТИЧЕСКОЕ ПЕРЕОПРЕДЕЛЕНИЕ СТИЛЕЙ ПОД MINECRAFT
    ========================================================== */
@@ -1397,15 +1385,13 @@ body.theme-minecraft-active {
   font-size: 11px !important;
 }
 
-/* Скрываем стандартный WebGL фон и старый логотип */
-body.theme-minecraft-active #bg-container,
-body.theme-minecraft-active .logo-container {
+/* Скрываем только стандартный WebGL фон (красивый текстовый логотип в углу оставляем!) */
+body.theme-minecraft-active #bg-container {
   display: none !important;
 }
 
-/* Показываем майнкрафтовские элементы */
-body.theme-minecraft-active #minecraft-bg-container,
-body.theme-minecraft-active #minecraft-logo-container {
+/* Показываем майнкрафтовский фон */
+body.theme-minecraft-active #minecraft-bg-container {
   display: block !important;
 }
 
@@ -1418,7 +1404,10 @@ body.theme-minecraft-active span,
 body.theme-minecraft-active input,
 body.theme-minecraft-active select,
 body.theme-minecraft-active select option,
-body.theme-minecraft-active button {
+body.theme-minecraft-active button,
+body.theme-minecraft-active #version-selected,
+body.theme-minecraft-active .version-item,
+body.theme-minecraft-active .status-text {
   font-family: 'Minecraftia', monospace !important;
   font-size: 11px !important;
 }
@@ -1453,13 +1442,71 @@ body.theme-minecraft-active select {
   box-shadow: inset 2px 2px 0 #222, inset -2px -2px 0 #333;
   padding: 8px 12px !important;
   font-size: 11px !important;
+  line-height: 1.5 !important;
+  min-height: 36px !important;
+  box-sizing: border-box !important;
   letter-spacing: -0.5px;
+}
+
+.version-item-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  margin-right: 8px;
 }
 
 body.theme-minecraft-active input[type="text"]:focus,
 body.theme-minecraft-active input[type="number"]:focus,
 body.theme-minecraft-active select:focus {
   border-color: #ffffff !important;
+}
+
+/* Специфичные исправления для настроек ОЗУ и ползунков */
+body.theme-minecraft-active .ram-input-wrapper {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  width: auto !important;
+  box-shadow: none !important;
+}
+
+body.theme-minecraft-active #ram-input {
+  width: 70px !important;
+  text-align: center;
+}
+
+body.theme-minecraft-active .ram-unit {
+  color: #303030 !important;
+  font-weight: bold !important;
+}
+
+body.theme-minecraft-active #ram-slider {
+  height: 10px !important;
+  background: #000 !important;
+  border: 2px solid #555555 !important;
+  border-radius: 0 !important;
+  box-shadow: inset 2px 2px 0 #222, inset -2px -2px 0 #333 !important;
+}
+
+body.theme-minecraft-active #ram-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 24px;
+  background: #7c7c7c !important;
+  border: 2px solid #000000 !important;
+  border-radius: 0 !important;
+  box-shadow: inset -2px -2px 0px #373737, inset 2px 2px 0px #c6c6c6 !important;
+  cursor: pointer;
+  transform: none !important;
+}
+
+/* Исправление нечитаемого текста чекбокса и подсказок */
+body.theme-minecraft-active #lbl-hide-on-launch,
+body.theme-minecraft-active #lbl-game-directory-hint {
+  color: #303030 !important;
+  font-weight: bold !important;
 }
 
 /* Чистый CSS-дизайн кнопок Minecraft (без использования widgets.png для исключения растягиваний) */
@@ -1506,10 +1553,11 @@ body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(
 }
 
 /* Фикс квадратных кнопок-иконок в стиле Minecraft */
-body.theme-minecraft-active #settings-icon,
-body.theme-minecraft-active #mods-btn,
-body.theme-minecraft-active #folder-btn,
-body.theme-minecraft-active #github-btn {
+/* Добавляем те же :not() селекторы, чтобы перебить специфичность основного правила кнопок */
+body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(#create-modpack-close):not(.settings-tab-btn):not(#btn-minimize):not(#btn-close)#settings-icon,
+body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(#create-modpack-close):not(.settings-tab-btn):not(#btn-minimize):not(#btn-close)#mods-btn,
+body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(#create-modpack-close):not(.settings-tab-btn):not(#btn-minimize):not(#btn-close)#folder-btn,
+body.theme-minecraft-active button:not(#settings-close):not(#catalog-close):not(#create-modpack-close):not(.settings-tab-btn):not(#btn-minimize):not(#btn-close)#github-btn {
   width: 48px !important;
   height: 48px !important;
   padding: 0 !important;
@@ -1524,8 +1572,8 @@ body.theme-minecraft-active #settings-icon svg,
 body.theme-minecraft-active #mods-btn svg,
 body.theme-minecraft-active #folder-btn svg,
 body.theme-minecraft-active #github-btn svg {
-  width: 20px !important;
-  height: 20px !important;
+  width: 38px !important;
+  height: 38px !important;
   margin: 0 !important;
   transition: none !important;
   transform: none !important;

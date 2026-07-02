@@ -158,6 +158,9 @@ ipcMain.on('window-close', () => {
 ipcMain.on('window-restore', () => {
   if (mainWindow) {
     mainWindow.show(); // Показываем окно обратно
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
     mainWindow.focus();
   }
 });
