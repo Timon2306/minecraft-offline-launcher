@@ -101,7 +101,14 @@ const TRANSLATIONS = {
     browseBtn: "Обзор...",
     updateAvailable: "Доступно обновление!",
     updateDesc: "Доступна новая версия v{version}. Хотите обновиться?",
-    updateBtn: "ОБНОВИТЬ СЕЙЧАС"
+    updateBtn: "ОБНОВИТЬ СЕЙЧАС",
+    tabGeneral: "Основные",
+    tabJava: "Запуск и Java",
+    tabAppearance: "Внешний вид",
+    hideOnLaunch: "Сворачивать лаунчер в трей при запуске",
+    themeLabel: "Оформление лаунчера",
+    themeCustom: "Кастомный (React-жидкость)",
+    themeAuto: "Автоматический (Хамелеон Minecraft) (BETA)"
   },
   en: {
     play: "PLAY",
@@ -130,7 +137,14 @@ const TRANSLATIONS = {
     browseBtn: "Browse...",
     updateAvailable: "Update Available!",
     updateDesc: "A new version v{version} is available. Update now?",
-    updateBtn: "UPDATE NOW"
+    updateBtn: "UPDATE NOW",
+    tabGeneral: "General",
+    tabJava: "Launch & Java",
+    tabAppearance: "Appearance",
+    hideOnLaunch: "Minimize launcher to tray on start",
+    themeLabel: "Launcher Theme",
+    themeCustom: "Custom (React-Liquid)",
+    themeAuto: "Automatic (Minecraft Chameleon) (BETA)"
   }
 };
 
@@ -175,6 +189,31 @@ const applyLanguage = (lang) => {
   if (lblUpdateAvailable) lblUpdateAvailable.textContent = t.updateAvailable;
   if (lblUpdateDesc) lblUpdateDesc.textContent = t.updateDesc.replace('{version}', latestVersionStr || '1.0.1');
   if (installUpdateBtn) installUpdateBtn.textContent = t.updateBtn;
+
+  // Вкладки настроек
+  const tabGeneral = document.querySelector('.settings-tab-btn[data-tab="general"]');
+  if (tabGeneral) tabGeneral.textContent = t.tabGeneral;
+  
+  const tabJava = document.querySelector('.settings-tab-btn[data-tab="java"]');
+  if (tabJava) tabJava.textContent = t.tabJava;
+
+  const tabAppearance = document.querySelector('.settings-tab-btn[data-tab="appearance"]');
+  if (tabAppearance) tabAppearance.textContent = t.tabAppearance;
+
+  // Доп настройки
+  const lblHide = document.getElementById('lbl-hide-on-launch');
+  if (lblHide) lblHide.textContent = t.hideOnLaunch;
+  
+  const lblTheme = document.getElementById('lbl-theme-mode');
+  if (lblTheme) lblTheme.textContent = t.themeLabel;
+
+  if (themeModeSelect) {
+    const optCustom = themeModeSelect.querySelector('option[value="custom"]');
+    if (optCustom) optCustom.textContent = t.themeCustom;
+
+    const optAuto = themeModeSelect.querySelector('option[value="auto"]');
+    if (optAuto) optAuto.textContent = t.themeAuto;
+  }
 
   saveSettingsBtn.textContent = t.saveBtn;
 
