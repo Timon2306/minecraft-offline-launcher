@@ -2,7 +2,7 @@ const fs = require('fs');
 const https = require('https');
 const path = require('path');
 
-const version = "1.0.7";
+const version = "1.0.8";
 const repo = "Timon2306/minecraft-offline-launcher";
 const filePath = path.join(__dirname, "dist", `Minecraft Offline Launcher Setup ${version}.exe`);
 
@@ -56,7 +56,7 @@ async function upload() {
         body: `### Что нового в ${version}:
 - Исправлена читаемость текста обновления в режиме «Хамелеон» (добавлена тёмная плашка и тени).
 - Добавлен полный перевод всех настроек и вкладок на английский язык.
-- Все фиксы из 1.0.6 (исправление кракозябр в логах и авто-лечение битых JSON файлов).
+- Исправление кракозябр в логах и авто-лечение битых JSON файлов при плохом интернете.
 
 **ВАЖНО:** Сами сборки (моды и конфиги) никак не изменились с версии 1.0.0, обновлен только сам лаунчер!`,
         draft: false,
