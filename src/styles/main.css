@@ -1640,3 +1640,30 @@ body.theme-minecraft-active .modal-footer {
   border-top: 2px solid #555555 !important;
   background: #a0a0a0 !important;
 }
+
+/* Стили панели обновления (по умолчанию - React) */
+.update-block-container {
+  border: 1px solid rgba(0, 180, 255, 0.3);
+  background: rgba(0, 180, 255, 0.05);
+}
+.update-title {
+  color: #00b4ff;
+}
+.update-desc {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Стили панели обновления (Хамелеон) */
+body.theme-minecraft-active .update-block-container {
+  border: 2px solid #000;
+  background: rgba(0, 0, 0, 0.6);
+}
+body.theme-minecraft-active .update-title {
+  color: #55FFFF;
+  text-shadow: 2px 2px 0px #002A2A;
+}
+body.theme-minecraft-active .update-desc {
+  color: #FFFFFF;
+  text-shadow: 2px 2px 0px #3F3F3F;
+}
+
