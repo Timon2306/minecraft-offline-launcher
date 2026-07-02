@@ -3,6 +3,106 @@
 // Minecraft Launcher — Главный процесс
 // ============================================
 
+// --- Перехват консоли для предотвращения кракозябр (трансляция логов на английский) ---
+(function overrideConsole() {
+  const originalLog = console.log;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+
+  const translationDict = {
+    "Конфиг успешно загружен с диска.": "Config successfully loaded from disk.",
+    "Файл настроек отсутствует. Создание дефолтного...": "Config file missing. Creating default...",
+    "Ошибка чтения/парсинга файла настроек. Используются дефолты.": "Error reading/parsing config file. Using defaults.",
+    "Не удалось сохранить настройки:": "Failed to save config:",
+    "Не удалось создать игровую папку:": "Failed to create game directory:",
+    "Настройки сохранены:": "Config saved:",
+    "Загрузка списка версий из API Mojang...": "Loading version list from Mojang API...",
+    "Список версий кэширован локально.": "Version list cached locally.",
+    "Определена версия": "Detected version",
+    "по наличию": "by presence of",
+    "Найдена сборка": "Found custom instance",
+    "Скачивание обновления из": "Downloading update from",
+    "Скачивание завершено, файл закрыт. Запуск установщика...": "Download finished, file closed. Starting installer...",
+    "Некорректное название сборки": "Invalid instance name",
+    "Используем стабильную версию Fabric": "Using stable Fabric version",
+    "Создана новая сборка модов:": "New custom instance created:",
+    "Ошибка при создании сборки:": "Error creating custom instance:",
+    "Начало установки встроенной сборки": "Starting installation of built-in instance",
+    "Скачивание одиночного мода": "Downloading single mod",
+    "Ошибка парсинга JSON версии при скачивании мода:": "Error parsing version JSON while downloading mod:",
+    "Моды можно скачивать только для сборок": "Mods can only be downloaded for custom instances",
+    "Нельзя скачивать моды для чистой ванильной версии.": "Cannot download mods for clean vanilla version.",
+    "Ошибка скачивания:": "Download error:",
+    "Ошибка при получении деталей версии:": "Error getting version details:",
+    "Ошибка импорта сборки:": "Error importing instance:",
+    "Успешно скачан установщик Forge": "Successfully downloaded Forge installer",
+    "Не удалось скачать по адресу": "Failed to download from",
+    "Открытие локального архива:": "Opening local archive:",
+    "Обнаружен локальный Modrinth-модпак": "Detected local Modrinth modpack",
+    "Начало установки...": "Starting installation...",
+    "Извлечение overrides...": "Extracting overrides...",
+    "Создан профиль Modrinth версии:": "Modrinth profile created for version:",
+    "Обнаружен обычный ZIP-архив. Поиск CurseForge манифеста...": "Detected standard ZIP. Searching for CurseForge manifest...",
+    "Обнаружена CurseForge сборка модов!": "CurseForge instance detected!",
+    "Найдено модов для скачивания:": "Found mods to download:",
+    "Ошибка загрузки мода": "Error loading mod",
+    "Создан кастомный профиль версии:": "Custom profile created for version:",
+    "Импорт кастомной сборки в:": "Importing custom instance to:",
+    "успешно импортирована.": "successfully imported.",
+    "Ошибка импорта локального архива:": "Error importing local archive:",
+    "Чтение структуры инсталлятора Forge": "Reading Forge installer structure",
+    "Не удалось прочитать install_profile.json": "Failed to read install_profile.json",
+    "Обнаружен старый формат Forge. Выполняем быструю программную установку...": "Detected old Forge format. Running quick programmatic installation...",
+    "Запуск игры...": "Launching game...",
+    "Попытка запуска:": "Attempting to launch:",
+    "Игра запущена!": "Game launched!",
+    "Ошибка при запуске игры:": "Error launching game:",
+    "Игра закрыта с кодом:": "Game closed with code:",
+    "Игра закрылась менее чем через 15 секунд": "Game closed in less than 15 seconds",
+    "Краш-репорт не найден.": "Crash report not found.",
+    "Игра закрылась корректно или краш-репорт не требуется.": "Game closed correctly or crash report is not required.",
+    "Обнаружен файл краш-репорта:": "Crash report file detected:",
+    "Содержимое краш-репорта отправлено в рендерер.": "Crash report content sent to renderer.",
+    "Не удалось прочитать файл краш-репорта:": "Failed to read crash report file:",
+    "Не удалось найти краш-репорты в папке crash-reports": "Failed to find crash reports in crash-reports folder",
+    "Папка игры не существует:": "Game folder does not exist:",
+    "Ошибка при открытии папки игры:": "Error opening game folder:",
+    "Ошибка при открытии внешней ссылки:": "Error opening external link:"
+  };
+
+  const rus = {
+    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo', 'Ж': 'Zh', 'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Sch', 'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya',
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+  };
+
+  function translateAndTransliterate(val) {
+    if (typeof val !== 'string') return val;
+    
+    let text = val;
+    for (const [key, value] of Object.entries(translationDict)) {
+      text = text.replace(new RegExp(key, 'g'), value);
+    }
+    
+    return text.split('').map(char => rus[char] !== undefined ? rus[char] : char).join('');
+  }
+
+  function processArgs(args) {
+    return Array.from(args).map(arg => {
+      if (typeof arg === 'string') {
+        return translateAndTransliterate(arg);
+      }
+      if (arg instanceof Error) {
+        return `${arg.name}: ${translateAndTransliterate(arg.message)}`;
+      }
+      return arg;
+    });
+  }
+
+  console.log = function() { originalLog.apply(console, processArgs(arguments)); };
+  console.warn = function() { originalWarn.apply(console, processArgs(arguments)); };
+  console.error = function() { originalError.apply(console, processArgs(arguments)); };
+})();
+
 const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
 const path = require('path');
 
