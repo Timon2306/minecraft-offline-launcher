@@ -26,6 +26,13 @@ scratch/
 # Rust сборка
 src-rust/target/
 
-# Тестовые скрипты с токенами
+# Тестовые скрипты с токенами и утилиты сборки
 test-fetch.ps1
 release_info.json
+test.ps1
+test-scope.ps1
+update-release-text.js
+update-text.bat
+upload-release.js
+upload-release.ps1
+upload.bat
