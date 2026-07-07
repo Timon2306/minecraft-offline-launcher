@@ -1311,7 +1311,7 @@ body::after {
   height: 100vh;
   z-index: -2;
   overflow: hidden;
-  perspective: 50vmax;
+  perspective: 30vw;
   perspective-origin: 50% 50%;
   background: #000;
   transition: filter 0.25s ease, opacity 0.25s ease;
@@ -1326,42 +1326,41 @@ body::after {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 100vmax;
-  height: 100vmax;
-  margin-top: -50vmax;
-  margin-left: -50vmax;
+  width: 100vw;
+  height: 100vw;
+  margin-top: -50vw;
+  margin-left: -50vw;
   transform-style: preserve-3d;
-  /* Центрируем куб относительно камеры на Z = 50vmax (ровно 90 градусов FOV на любом экране) */
-  transform: translateZ(50vmax);
+  /* Центрируем камеру внутри куба (perspective = 30vw) */
+  transform: translateZ(30vw);
   animation: rotateCube 100s linear infinite;
   will-change: transform;
 }
 
 @keyframes rotateCube {
-  /* Вращаем в положительную сторону, чтобы камера крутилась вправо, как в ваниле */
-  0% { transform: translateZ(50vmax) rotateX(-12deg) rotateY(0deg); }
-  100% { transform: translateZ(50vmax) rotateX(-12deg) rotateY(360deg); }
+  0% { transform: translateZ(30vw) rotateX(-12deg) rotateY(0deg); }
+  100% { transform: translateZ(30vw) rotateX(-12deg) rotateY(360deg); }
 }
 
 .panorama-cube .face {
   position: absolute;
-  width: 100vmax;
-  height: 100vmax;
+  width: 100vw;
+  height: 100vw;
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
-  image-rendering: pixelated;
-  backface-visibility: hidden; /* Скрываем заднюю сторону для устранения артефактов рендера */
-  outline: 1px solid transparent; /* Хак для сглаживания швов в некоторых браузерах */
+  image-rendering: pixelated; /* Возвращаем резкие пиксели, как в ваниле */
+  backface-visibility: hidden;
+  outline: 1px solid transparent;
 }
 
-/* Слегка растягиваем грани (scale 1.005), чтобы текстуры накладывались друг на друга без физического пересечения плоскостей (которое вызывает Z-fighting и чёрные полосы) */
-.panorama-cube .face.front  { transform: rotateY(0deg) translateZ(-50vmax) scale(1.005); }
-.panorama-cube .face.right  { transform: rotateY(-90deg) translateZ(-50vmax) scale(1.005); }
-.panorama-cube .face.back   { transform: rotateY(180deg) translateZ(-50vmax) scale(1.005); }
-.panorama-cube .face.left   { transform: rotateY(90deg) translateZ(-50vmax) scale(1.005); }
-.panorama-cube .face.top    { transform: rotateX(-90deg) translateZ(-50vmax) scale(1.005); }
-.panorama-cube .face.bottom { transform: rotateX(90deg) translateZ(-50vmax) scale(1.005); }
+/* Сборка куба с учетом радиуса 50vw */
+.panorama-cube .face.front  { transform: rotateY(0deg) translateZ(-50vw) scale(1.005); }
+.panorama-cube .face.right  { transform: rotateY(-90deg) translateZ(-50vw) scale(1.005); }
+.panorama-cube .face.back   { transform: rotateY(180deg) translateZ(-50vw) scale(1.005); }
+.panorama-cube .face.left   { transform: rotateY(90deg) translateZ(-50vw) scale(1.005); }
+.panorama-cube .face.top    { transform: rotateX(-90deg) translateZ(-50vw) scale(1.005); }
+.panorama-cube .face.bottom { transform: rotateX(90deg) translateZ(-50vw) scale(1.005); }
 
 .minecraft-dirt-overlay {
   display: none;
@@ -1655,15 +1654,84 @@ body.theme-minecraft-active .modal-footer {
 
 /* Стили панели обновления (Хамелеон) */
 body.theme-minecraft-active .update-block-container {
-  border: 2px solid #000;
-  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #555 !important;
+  background: #000 !important;
+  box-shadow: inset 2px 2px 0 #222, inset -2px -2px 0 #333 !important;
+  border-radius: 0 !important;
 }
 body.theme-minecraft-active .update-title {
-  color: #55FFFF;
-  text-shadow: 2px 2px 0px #002A2A;
+  color: #ffff55 !important;
+  text-shadow: 2px 2px 0px #3f3f00 !important;
 }
 body.theme-minecraft-active .update-desc {
-  color: #FFFFFF;
-  text-shadow: 2px 2px 0px #3F3F3F;
+  color: #aaaaaa !important;
+  text-shadow: 2px 2px 0px #000 !important;
 }
 
+/* Фиксы поиска и фильтров в каталоге */
+body.theme-minecraft-active .search-box {
+  background: #000 !important;
+  border: 2px solid #555555 !important;
+  border-radius: 0 !important;
+  box-shadow: inset 2px 2px 0 #222, inset -2px -2px 0 #333 !important;
+  padding: 0 12px !important;
+  height: 38px;
+}
+body.theme-minecraft-active .search-box svg {
+  color: #fff !important;
+}
+body.theme-minecraft-active .search-box #catalog-search {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: 100% !important;
+  min-height: unset !important;
+}
+body.theme-minecraft-active .catalog-version-select {
+  width: auto !important;
+  min-width: 140px !important;
+}
+
+/* Фильтры каталога 2x2 */
+body.theme-minecraft-active .catalog-filters {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+body.theme-minecraft-active .catalog-filters button {
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+/* Карточки модов (цвета) */
+body.theme-minecraft-active .catalog-card {
+  border: 2px solid #555555 !important;
+  border-radius: 0 !important;
+  background: #a0a0a0 !important;
+  box-shadow: inset 2px 2px 0 #c6c6c6, inset -2px -2px 0 #707070 !important;
+}
+body.theme-minecraft-active .card-title {
+  color: #3f3f3f !important;
+  text-shadow: none !important;
+}
+body.theme-minecraft-active .card-desc {
+  color: #202020 !important;
+  text-shadow: none !important;
+}
+
+/* Фикс невидимых крестиков закрытия в модалках */
+body.theme-minecraft-active #catalog-close,
+body.theme-minecraft-active #settings-close,
+body.theme-minecraft-active #create-modpack-close {
+  color: #3f3f3f !important;
+}
+body.theme-minecraft-active #catalog-close:hover,
+body.theme-minecraft-active #settings-close:hover,
+body.theme-minecraft-active #create-modpack-close:hover {
+  color: #ff5555 !important;
+  background: transparent !important;
+}

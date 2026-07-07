@@ -1,0 +1,19 @@
+[package]
+name = "launcher_native"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "2.16.0", features = ["async", "tokio_rt"] }
+napi-derive = "2.16.0"
+tokio = { version = "1.35.1", features = ["full"] }
+reqwest = { version = "0.11.23", features = ["stream"] }
+sha1 = "0.10.6"
+hex = "0.4.3"
+futures-util = "0.3.30"
+
+[build-dependencies]
+napi-build = "2.1.3"

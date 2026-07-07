@@ -3,6 +3,7 @@
 // Minecraft Launcher — Главный процесс
 // ============================================
 
+
 // --- Перехват консоли для предотвращения кракозябр (трансляция логов на английский) ---
 (function overrideConsole() {
   const originalLog = console.log;
@@ -105,6 +106,12 @@
 
 const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
 const path = require('path');
+
+// [HOTFIX]: Фикс слетания настроек при обновлении лаунчера.
+// Если в package.json был добавлен productName, Electron меняет папку userData,
+// из-за чего теряется старый config.json (и сбрасывается выбранная папка игры).
+// Принудительно задаём путь к старой папке 'minecraft-offline-launcher'.
+app.setPath('userData', path.join(app.getPath('appData'), 'minecraft-offline-launcher'));
 
 // Модули лаунчера
 const configManager = require('./lib/config-manager');
@@ -299,9 +306,8 @@ ipcMain.handle('download-app-update', async (event, { url }) => {
 });
 
 // --- IPC: Версии (заглушка, реализация в Этапе 4) ---
-ipcMain.handle('get-versions', async () => {
-  if (versionManager) return versionManager.getVersions();
-  return { latest: { release: '1.20.4', snapshot: '1.20.4' }, versions: [] };
+ipcMain.handle('get-versions', async (event) => {
+  return await versionManager.getVersions(event.sender);
 });
 
 // --- IPC: Запуск игры (заглушка, реализация в Этапе 6) ---
@@ -328,7 +334,7 @@ ipcMain.handle('create-instance', async (event, { name, mcVersion, loaderType })
     if (!safeName) throw new Error('Некорректное название сборки');
 
     const versionId = `${safeName}-${mcVersion}`;
-    const instanceDir = path.join(gameDir, 'instances', versionId);
+    const instanceDir = path.join(gameDir, 'versions', versionId);
     fs.mkdirSync(instanceDir, { recursive: true });
     fs.mkdirSync(path.join(instanceDir, 'mods'), { recursive: true });
     fs.mkdirSync(path.join(instanceDir, 'config'), { recursive: true });

@@ -22,3 +22,10 @@ config.json
 versions-cache.json
 .gemini/
 scratch/
+
+# Rust сборка
+src-rust/target/
+
+# Тестовые скрипты с токенами
+test-fetch.ps1
+release_info.json

@@ -108,7 +108,15 @@ const TRANSLATIONS = {
     hideOnLaunch: "Сворачивать лаунчер в трей при запуске",
     themeLabel: "Оформление лаунчера",
     themeCustom: "Кастомный (React-жидкость)",
-    themeAuto: "Автоматический (Хамелеон Minecraft) (BETA)"
+    themeAuto: "Автоматический (Хамелеон Minecraft) (BETA)",
+    importZip: "ИМПОРТ ZIP",
+    importZipTitle: "Установить локальную сборку из .zip или .mrpack",
+    createInstance: "СОЗДАТЬ СБОРКУ",
+    createInstanceTitle: "Создать собственную сборку",
+    statusInit: "Инициализация...",
+    minimize: "Свернуть",
+    openFolder: "Открыть папку игры",
+    githubRepo: "Репозиторий GitHub"
   },
   en: {
     play: "PLAY",
@@ -144,7 +152,15 @@ const TRANSLATIONS = {
     hideOnLaunch: "Minimize launcher to tray on start",
     themeLabel: "Launcher Theme",
     themeCustom: "Custom (React-Liquid)",
-    themeAuto: "Automatic (Minecraft Chameleon) (BETA)"
+    themeAuto: "Automatic (Minecraft Chameleon) (BETA)",
+    importZip: "IMPORT ZIP",
+    importZipTitle: "Install local modpack from .zip or .mrpack",
+    createInstance: "CREATE INSTANCE",
+    createInstanceTitle: "Create your own instance",
+    statusInit: "Initializing...",
+    minimize: "Minimize",
+    openFolder: "Open Game Folder",
+    githubRepo: "GitHub Repository"
   }
 };
 
@@ -194,7 +210,7 @@ const applyLanguage = (lang) => {
   const tabGeneral = document.querySelector('.settings-tab-btn[data-tab="general"]');
   if (tabGeneral) tabGeneral.textContent = t.tabGeneral;
   
-  const tabJava = document.querySelector('.settings-tab-btn[data-tab="java"]');
+  const tabJava = document.getElementById('btn-tab-launch');
   if (tabJava) tabJava.textContent = t.tabJava;
 
   const tabAppearance = document.querySelector('.settings-tab-btn[data-tab="appearance"]');
@@ -226,6 +242,38 @@ const applyLanguage = (lang) => {
     if (type === 'modpack') btn.textContent = t.filterModpacks;
     if (type === 'mod') btn.textContent = t.filterMods;
   });
+
+  // Остальные мелкие элементы
+  const btnMinimize = document.getElementById('btn-minimize');
+  if (btnMinimize) btnMinimize.title = t.minimize;
+  const btnClose = document.getElementById('btn-close');
+  if (btnClose) btnClose.title = t.close;
+  const modsBtn = document.getElementById('mods-btn');
+  if (modsBtn) modsBtn.title = t.tabCatalog;
+  const folderBtn = document.getElementById('folder-btn');
+  if (folderBtn) folderBtn.title = t.openFolder;
+  const githubBtn = document.getElementById('github-btn');
+  if (githubBtn) githubBtn.title = t.githubRepo;
+  const catalogClose = document.getElementById('catalog-close');
+  if (catalogClose) catalogClose.title = t.close;
+  const settingsClose = document.getElementById('settings-close');
+  if (settingsClose) settingsClose.title = t.close;
+
+  const importZipBtn = document.getElementById('import-zip-btn');
+  if (importZipBtn) {
+    importZipBtn.textContent = t.importZip;
+    importZipBtn.title = t.importZipTitle;
+  }
+  const createInstanceBtn = document.getElementById('create-instance-btn');
+  if (createInstanceBtn) {
+    createInstanceBtn.textContent = t.createInstance;
+    createInstanceBtn.title = t.createInstanceTitle;
+  }
+
+  const statusText = document.getElementById('status-text');
+  if (statusText && (statusText.textContent === "Инициализация..." || statusText.textContent === "Initializing...")) {
+    statusText.textContent = t.statusInit;
+  }
 };
 
 // Красивое форматирование названий версий для UI
@@ -398,6 +446,81 @@ const selectVersion = (id, type, displayText) => {
   }
 };
 
+// Отрисовка элементов списка версий
+const renderVersions = (data) => {
+  versionListDynamic.innerHTML = '';
+  data.versions.forEach(v => {
+    const item = document.createElement('div');
+    item.className = 'version-item';
+    
+    if (v.type === 'snapshot') {
+      item.classList.add('version-snapshot');
+      if (!snapshotsToggle.checked) {
+        item.style.display = 'none';
+      }
+    } else if (v.type === 'custom') {
+      item.classList.add('custom-version');
+    } else if (v.type === 'cristalix') {
+      item.classList.add('cristalix-version');
+    }
+    
+    item.dataset.versionId = v.id;
+    item.dataset.versionType = v.type;
+    
+    let badge = '';
+    if (v.type === 'snapshot') badge = ' ⚡';
+    else if (v.type === 'custom') badge = ' 📦';
+    
+    const textSpan = document.createElement('span');
+    textSpan.className = 'version-item-title';
+    textSpan.textContent = `${formatVersionName(v.id)}${badge}`;
+    item.appendChild(textSpan);
+    
+    if (v.type === 'custom') {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-version-btn';
+      deleteBtn.dataset.versionId = v.id;
+      deleteBtn.title = currentLang === 'ru' ? 'Удалить сборку' : 'Delete modpack';
+      deleteBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="14" height="14" style="pointer-events: none;">
+          <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+        </svg>
+      `;
+      item.appendChild(deleteBtn);
+    }
+    
+    versionListDynamic.appendChild(item);
+  });
+};
+
+// Восстановление выбранной версии из конфига
+const restoreSelectedVersion = (data) => {
+  let savedVer = config.selectedVersion;
+  let exists = false;
+  
+  if (savedVer) {
+    const items = versionListDynamic.querySelectorAll('.version-item');
+    for (const item of items) {
+      if (item.dataset.versionId === savedVer) {
+        selectVersion(item.dataset.versionId, item.dataset.versionType, item.textContent.trim());
+        exists = true;
+        break;
+      }
+    }
+  }
+
+  if (!exists) {
+    if (data.latest && data.latest.release) {
+      selectVersion(data.latest.release, 'release', data.latest.release);
+    } else {
+      selectVersion('1.20.4', 'release', '1.20.4');
+    }
+  }
+};
+
+// Флаг, чтобы повесить обработчик кликов по списку только один раз
+let isVersionListListenerAttached = false;
+
 // Загрузка версий с бэкенда (Mojang API + кэш)
 const initVersions = async () => {
   versionSelected.classList.add('shimmer');
@@ -405,131 +528,59 @@ const initVersions = async () => {
   try {
     const data = await API.getVersions();
     allVersionsData = data;
-    // data = { latest: { release, snapshot }, versions: [{ id, type }] }
     
-    versionListDynamic.innerHTML = '';
-    
-    // Рендер версий
-    data.versions.forEach(v => {
-      const item = document.createElement('div');
-      item.className = 'version-item';
-      
-      if (v.type === 'snapshot') {
-        item.classList.add('version-snapshot');
-        // Скрыто по умолчанию
-        if (!snapshotsToggle.checked) {
-          item.style.display = 'none';
-        }
-      } else if (v.type === 'custom') {
-        item.classList.add('custom-version');
-      } else if (v.type === 'cristalix') {
-        item.classList.add('cristalix-version');
-      }
-      
-      item.dataset.versionId = v.id;
-      item.dataset.versionType = v.type;
-      
-      let badge = '';
-      if (v.type === 'snapshot') badge = ' ⚡';
-      else if (v.type === 'custom') badge = ' 📦';
-      // Смайлик для cristalix уже добавляется спереди в formatVersionName, поэтому здесь не добавляем
-      
-      // Имя версии
-      const textSpan = document.createElement('span');
-      textSpan.className = 'version-item-title';
-      textSpan.textContent = `${formatVersionName(v.id)}${badge}`;
-      item.appendChild(textSpan);
-      
-      // Кнопка удаления (только для кастомных/импортированных версий)
-      if (v.type === 'custom') {
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-version-btn';
-        deleteBtn.dataset.versionId = v.id;
-        deleteBtn.title = currentLang === 'ru' ? 'Удалить сборку' : 'Delete modpack';
-        deleteBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="14" height="14" style="pointer-events: none;">
-            <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
-          </svg>
-        `;
-        item.appendChild(deleteBtn);
-      }
-      
-      versionListDynamic.appendChild(item);
-    });
+    renderVersions(data);
 
-    // Обработка выбора элементов (делегирование на весь контейнер списка версий)
-    versionList.addEventListener('click', async (e) => {
-      e.stopPropagation(); // Останавливаем закрытие меню при кликах внутри списка
+    // Вешаем обработчик кликов один раз при первом запуске
+    if (!isVersionListListenerAttached) {
+      isVersionListListenerAttached = true;
+      
+      versionList.addEventListener('click', async (e) => {
+        e.stopPropagation();
 
-      // Если кликнули на удаление версии
-      const deleteBtn = e.target.closest('.delete-version-btn');
-      if (deleteBtn) {
-        const versionId = deleteBtn.dataset.versionId;
-        const formattedName = formatVersionName(versionId);
-        const confirmMsg = currentLang === 'ru' 
-          ? `Вы уверены, что хотите полностью удалить сборку "${formattedName}"?`
-          : `Are you sure you want to completely delete the modpack "${formattedName}"?`;
-        
-        if (confirm(confirmMsg)) {
-          try {
-            const res = await API.deleteVersion(versionId);
-            if (res && res.status === 'success') {
-              // Обновляем настройки и список версий
-              config = await API.getConfig();
-              await initVersions();
+        const deleteBtn = e.target.closest('.delete-version-btn');
+        if (deleteBtn) {
+          const versionId = deleteBtn.dataset.versionId;
+          const formattedName = formatVersionName(versionId);
+          const confirmMsg = currentLang === 'ru' 
+            ? `Вы уверены, что хотите полностью удалить сборку "${formattedName}"?`
+            : `Are you sure you want to completely delete the modpack "${formattedName}"?`;
+          
+          if (confirm(confirmMsg)) {
+            try {
+              const res = await API.deleteVersion(versionId);
+              if (res && res.status === 'success') {
+                config = await API.getConfig();
+                await initVersions();
+              }
+            } catch (err) {
+              console.error('Ошибка при удалении версии:', err);
+              showError(err.message);
             }
-          } catch (err) {
-            console.error('Ошибка при удалении версии:', err);
-            showError(err.message);
           }
+          return;
         }
-        return; // Предотвращаем запуск селекта версии
-      }
 
-      const item = e.target.closest('.version-item');
-      if (!item) return;
+        const item = e.target.closest('.version-item');
+        if (!item) return;
 
-      const id = item.dataset.versionId;
-      const type = item.dataset.versionType;
-      const text = item.textContent.trim();
-      selectVersion(id, type, text);
-    });
+        const id = item.dataset.versionId;
+        const type = item.dataset.versionType;
+        const text = item.textContent.trim();
+        selectVersion(id, type, text);
+      });
 
-    // Клик по всей строке контейнера тоггла переключает галочку
-    const toggleContainer = versionList.querySelector('.snapshots-toggle-container');
-    toggleContainer.addEventListener('click', (e) => {
-      if (e.target !== snapshotsToggle && !e.target.closest('label')) {
-        snapshotsToggle.checked = !snapshotsToggle.checked;
-        snapshotsToggle.dispatchEvent(new Event('change'));
-      }
-    });
+      const toggleContainer = versionList.querySelector('.snapshots-toggle-container');
+      toggleContainer.addEventListener('click', (e) => {
+        if (e.target !== snapshotsToggle && !e.target.closest('label')) {
+          snapshotsToggle.checked = !snapshotsToggle.checked;
+          snapshotsToggle.dispatchEvent(new Event('change'));
+        }
+      });
+    }
 
-    // Восстановление выбранной версии из конфига
     config = await API.getConfig();
-    let savedVer = config.selectedVersion;
-    
-    // Проверить, существует ли сохранённая версия
-    let exists = false;
-    if (savedVer) {
-      const items = versionListDynamic.querySelectorAll('.version-item');
-      for (const item of items) {
-        if (item.dataset.versionId === savedVer) {
-          selectVersion(item.dataset.versionId, item.dataset.versionType, item.textContent.trim());
-          exists = true;
-          break;
-        }
-      }
-    }
-
-    // Если нет сохранённой или она не найдена — берем дефолтный латест релиз
-    if (!exists) {
-      if (data.latest && data.latest.release) {
-        selectVersion(data.latest.release, 'release', data.latest.release);
-      } else {
-        // Фоллбек
-        selectVersion('1.20.4', 'release', '1.20.4');
-      }
-    }
+    restoreSelectedVersion(data);
 
   } catch (err) {
     console.error('Ошибка загрузки версий:', err);
@@ -537,6 +588,31 @@ const initVersions = async () => {
     versionSelected.classList.remove('shimmer');
   }
 };
+
+// Подписка на обновление версий в фоне
+if (API.onVersionsUpdated) {
+  API.onVersionsUpdated((data) => {
+    console.log('[Renderer] Список версий обновился в фоне.');
+    allVersionsData = data;
+    renderVersions(data);
+    
+    // Проверяем, на месте ли выбранная версия
+    let savedVer = config.selectedVersion;
+    if (savedVer) {
+      const items = versionListDynamic.querySelectorAll('.version-item');
+      let stillExists = false;
+      for (const item of items) {
+        if (item.dataset.versionId === savedVer) {
+          stillExists = true;
+          break;
+        }
+      }
+      if (!stillExists) {
+        restoreSelectedVersion(data);
+      }
+    }
+  });
+}
 
 // Тоггл снапшотов
 snapshotsToggle.addEventListener('change', (e) => {
@@ -1460,7 +1536,7 @@ const init = async () => {
     applyLanguage(savedLang);
 
     // Инициализация темы и свертывания
-    themeModeSelect.value = config.themeMode || 'custom';
+    themeModeSelect.value = config.themeMode || 'auto';
     hideOnLaunchCheckbox.checked = config.hideOnLaunch !== false;
   } catch (err) {
     console.error('Не удалось загрузить конфиг:', err);
@@ -1470,11 +1546,25 @@ const init = async () => {
   await initVersions();
 
   // 4. Применение сохраненной темы
-  applyThemeMode(config.themeMode || 'custom', selectedVersionId);
+  applyThemeMode(config.themeMode || 'auto', selectedVersionId);
 
   // 5. Проверка обновлений на GitHub
   checkUpdates();
 };
+
+// Сравнение семантических версий (проверяет, новее ли remote по сравнению с local)
+function isNewerVersion(local, remote) {
+  const parse = v => v.replace('v', '').split('.').map(x => parseInt(x) || 0);
+  const l = parse(local);
+  const r = parse(remote);
+  for (let i = 0; i < Math.max(l.length, r.length); i++) {
+    const lVal = l[i] || 0;
+    const rVal = r[i] || 0;
+    if (rVal > lVal) return true;
+    if (lVal > rVal) return false;
+  }
+  return false;
+}
 
 // Автопроверка обновлений на GitHub
 async function checkUpdates() {
@@ -1487,7 +1577,7 @@ async function checkUpdates() {
       const data = await res.json();
       const latestVersion = data.tag_name.replace('v', '').trim();
       
-      if (latestVersion !== currentVersion) {
+      if (isNewerVersion(currentVersion, latestVersion)) {
         githubBadge.style.display = 'block';
         console.log(`[UpdateChecker] Доступна новая версия: ${latestVersion}`);
         
