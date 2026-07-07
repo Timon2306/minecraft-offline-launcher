@@ -41,7 +41,8 @@
     "publish": {
       "provider": "github",
       "owner": "Timon2306",
-      "repo": "minecraft-offline-launcher"
+      "repo": "minecraft-offline-launcher",
+      "releaseName": "Release v1.1.0"
     }
   },
   "napi": {
