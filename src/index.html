@@ -185,18 +185,18 @@
           <div class="settings-tab-content hidden" id="tab-launch">
             <!-- Выделение RAM -->
             <div class="setting-group">
-              <label>Выделение оперативной памяти</label>
+              <label id="lbl-ram">Выделение оперативной памяти</label>
               <div class="range-container">
                 <input type="range" id="ram-slider" min="1" max="16" step="1" value="4">
                 <div class="ram-input-wrapper">
                   <input type="number" id="ram-input" min="1024" max="16384" step="512" value="4096">
-                  <span class="ram-unit">МБ</span>
+                  <span class="ram-unit" id="lbl-ram-unit">МБ</span>
                 </div>
               </div>
             </div>
             <!-- JVM Аргументы -->
             <div class="setting-group">
-              <label for="jvm-args-input">Аргументы JVM</label>
+              <label for="jvm-args-input" id="lbl-jvm">Аргументы JVM</label>
               <input type="text" id="jvm-args-input" placeholder="-XX:+UseG1GC -XX:+ParallelRefProcEnabled">
             </div>
             <!-- Сворачивание в трей при запуске -->

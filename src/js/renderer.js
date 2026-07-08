@@ -116,7 +116,51 @@ const TRANSLATIONS = {
     statusInit: "Инициализация...",
     minimize: "Свернуть",
     openFolder: "Открыть папку игры",
-    githubRepo: "Репозиторий GitHub"
+    githubRepo: "Репозиторий GitHub",
+    
+    // Новые ключи перевода
+    allVersions: "Все версии",
+    createTitle: "Создать сборку модов",
+    modpackNameLabel: "Название сборки",
+    modpackNamePlaceholder: "Например: Custom Pack",
+    minecraftVersionLabel: "Версия Minecraft",
+    loaderLabel: "Загрузчик модов",
+    loaderVanilla: "Чистая ванилла (без модов)",
+    createBtn: "СОЗДАТЬ",
+    creating: "СОЗДАНИЕ...",
+    preparingDownload: "Подготовка скачивания {title}...",
+    successInstalled: "Успешно установлено: {title}!",
+    vanillaDownloadError: "Нельзя скачивать моды на чистую ванильную версию! Пожалуйста, выберите сборку (например, Optimized Fabric или создайте свою) в главном меню.",
+    unknownDownloadError: "Неизвестная ошибка скачивания",
+    errorLoadingData: "Ошибка загрузки данных. Проверьте соединение с интернетом.",
+    nothingFound: "Ничего не найдено",
+    loadingFromModrinth: "Загрузка данных с Modrinth...",
+    gameStartedWaiting: "Игра запущена! Ожидание окна...",
+    inGame: "В ИГРЕ",
+    gameCrash: "Вылет игры! {error}",
+    gameLaunchError: "Ошибка запуска игры (код {code}). Нажмите Ctrl+Shift+D для логов.",
+    preparingGameFiles: "Подготовка файлов игры...",
+    libraries: "Библиотеки",
+    assets: "Ассеты",
+    preparing: "Подготовка",
+    unpackingNatives: "Распаковка нативных библиотек...",
+    installingFabric: "Установка Fabric Loader...",
+    installingMods: "Установка модов...",
+    calculating: "расчет...",
+    minShort: "мин.",
+    secShort: "сек.",
+    done: "завершено",
+    selectModpackError: "Сначала выберите или создайте сборку на главном экране!",
+    modsOnlyForModpacks: "Скачивание модов доступно только для сборок (Forge/Fabric)!",
+    versionLockedForBuild: "Версия заблокирована под выбранную сборку",
+    filterByGameVersion: "Фильтр по версии игры",
+    versionSelectedAuto: "версия выбирается автоматически",
+    modpackCreated: "Сборка \"{name}\" успешно создана!",
+    enterModpackNameAlert: "Пожалуйста, введите название сборки!",
+    zipExtracting: "Распаковка архива сборки...",
+    zipImportSuccess: "Сборка модов успешно импортирована: {name}",
+    errorLabel: "Ошибка: {msg}",
+    deleteModpackConfirm: "Вы уверены, что хотите удалить сборку \"{name}\" и ВСЕ её моды?"
   },
   en: {
     play: "PLAY",
@@ -160,7 +204,51 @@ const TRANSLATIONS = {
     statusInit: "Initializing...",
     minimize: "Minimize",
     openFolder: "Open Game Folder",
-    githubRepo: "GitHub Repository"
+    githubRepo: "GitHub Repository",
+    
+    // New translation keys
+    allVersions: "All versions",
+    createTitle: "Create Modpack",
+    modpackNameLabel: "Modpack Name",
+    modpackNamePlaceholder: "e.g. Custom Pack",
+    minecraftVersionLabel: "Minecraft Version",
+    loaderLabel: "Mod Loader",
+    loaderVanilla: "Vanilla (no mods)",
+    createBtn: "CREATE",
+    creating: "CREATING...",
+    preparingDownload: "Preparing download for {title}...",
+    successInstalled: "Successfully installed: {title}!",
+    vanillaDownloadError: "Cannot download mods to a pure vanilla version! Please choose a modpack (e.g. Optimized Fabric or create your own) in the main menu.",
+    unknownDownloadError: "Unknown download error",
+    errorLoadingData: "Error loading data. Please check your internet connection.",
+    nothingFound: "Nothing found",
+    loadingFromModrinth: "Loading data from Modrinth...",
+    gameStartedWaiting: "Game started! Waiting for window...",
+    inGame: "IN GAME",
+    gameCrash: "Game crashed! {error}",
+    gameLaunchError: "Game launch error (code {code}). Press Ctrl+Shift+D for logs.",
+    preparingGameFiles: "Preparing game files...",
+    libraries: "Libraries",
+    assets: "Assets",
+    preparing: "Preparing",
+    unpackingNatives: "Unpacking native libraries...",
+    installingFabric: "Installing Fabric Loader...",
+    installingMods: "Installing mods...",
+    calculating: "calculating...",
+    minShort: "min.",
+    secShort: "sec.",
+    done: "done",
+    selectModpackError: "Please select or create a modpack on the main screen first!",
+    modsOnlyForModpacks: "Downloading mods is only available for modpacks (Forge/Fabric)!",
+    versionLockedForBuild: "Version locked for selected modpack",
+    filterByGameVersion: "Filter by game version",
+    versionSelectedAuto: "version selected automatically",
+    modpackCreated: "Modpack \"{name}\" created successfully!",
+    enterModpackNameAlert: "Please enter a name for the modpack!",
+    zipExtracting: "Extracting modpack archive...",
+    zipImportSuccess: "Modpack successfully imported: {name}",
+    errorLabel: "Error: {msg}",
+    deleteModpackConfirm: "Are you sure you want to delete the modpack \"{name}\" and ALL its mods?"
   }
 };
 
@@ -185,10 +273,13 @@ const applyLanguage = (lang) => {
   const modalTitle = settingsOverlay.querySelector('.modal-header h2');
   if (modalTitle) modalTitle.textContent = t.settingsTitle;
   
-  const ramLabel = settingsOverlay.querySelector('.setting-group:nth-child(1) label');
+  const ramLabel = document.getElementById('lbl-ram');
   if (ramLabel) ramLabel.textContent = t.ramLabel;
   
-  const jvmLabel = settingsOverlay.querySelector('.setting-group:nth-child(2) label');
+  const ramUnit = document.getElementById('lbl-ram-unit');
+  if (ramUnit) ramUnit.textContent = currentLang === 'ru' ? 'МБ' : 'MB';
+  
+  const jvmLabel = document.getElementById('lbl-jvm');
   if (jvmLabel) jvmLabel.textContent = t.jvmLabel;
   
   const langLabel = document.getElementById('lbl-language');
@@ -268,6 +359,38 @@ const applyLanguage = (lang) => {
   if (createInstanceBtn) {
     createInstanceBtn.textContent = t.createInstance;
     createInstanceBtn.title = t.createInstanceTitle;
+  }
+
+  // Оверлей создания сборки (Модалка)
+  const createModpackTitle = document.querySelector('#create-modpack-modal h2');
+  if (createModpackTitle) createModpackTitle.textContent = t.createTitle;
+  
+  const createModpackClose = document.getElementById('create-modpack-close');
+  if (createModpackClose) createModpackClose.title = t.close;
+
+  const lblModpackName = document.querySelector('#create-modpack-modal label[for="modpack-name-input"]');
+  if (lblModpackName) lblModpackName.textContent = t.modpackNameLabel;
+  if (modpackNameInput) modpackNameInput.placeholder = t.modpackNamePlaceholder;
+
+  const lblModpackVersion = document.querySelector('#create-modpack-modal label[for="modpack-version-select"]');
+  if (lblModpackVersion) lblModpackVersion.textContent = t.minecraftVersionLabel;
+
+  const lblModpackLoader = document.querySelector('#create-modpack-modal label[for="modpack-loader-select"]');
+  if (lblModpackLoader) lblModpackLoader.textContent = t.loaderLabel;
+
+  if (modpackLoaderSelect) {
+    const optVanilla = modpackLoaderSelect.querySelector('option[value="vanilla"]');
+    if (optVanilla) optVanilla.textContent = t.loaderVanilla;
+  }
+
+  if (createModpackBtn && createModpackBtn.textContent !== 'СОЗДАНИЕ...' && createModpackBtn.textContent !== 'CREATING...') {
+    createModpackBtn.textContent = t.createBtn;
+  }
+
+  // Каталог версий фильтр
+  if (catalogVersionFilter) {
+    const optAll = catalogVersionFilter.querySelector('option[value=""]');
+    if (optAll) optAll.textContent = t.allVersions;
   }
 
   const statusText = document.getElementById('status-text');
@@ -542,9 +665,8 @@ const initVersions = async () => {
         if (deleteBtn) {
           const versionId = deleteBtn.dataset.versionId;
           const formattedName = formatVersionName(versionId);
-          const confirmMsg = currentLang === 'ru' 
-            ? `Вы уверены, что хотите полностью удалить сборку "${formattedName}"?`
-            : `Are you sure you want to completely delete the modpack "${formattedName}"?`;
+          const t = TRANSLATIONS[currentLang];
+          const confirmMsg = t.deleteModpackConfirm.replace('{name}', formattedName);
           
           if (confirm(confirmMsg)) {
             try {
@@ -659,12 +781,13 @@ playButton.addEventListener('click', async () => {
   versionSelected.style.pointerEvents = 'none';
   playButton.disabled = true;
   
-  playButton.textContent = 'ЗАГРУЗКА...';
+  const t = TRANSLATIONS[currentLang];
+  playButton.textContent = t.launching;
   playButton.classList.add('pulse-glow');
   
   progressFill.style.width = '0%';
   progressContainer.style.display = 'flex';
-  statusText.textContent = 'Подготовка файлов игры...';
+  statusText.textContent = t.preparingGameFiles;
 
   // Сохраняем имя игрока в конфиг
   await API.saveConfig({ nickname });
@@ -686,10 +809,11 @@ playButton.addEventListener('click', async () => {
 
 // Сброс кнопки играть в дефолт
 const resetPlayButton = () => {
+  const t = TRANSLATIONS[currentLang];
   nicknameInput.disabled = false;
   versionSelected.style.pointerEvents = 'auto';
   playButton.disabled = false;
-  playButton.textContent = 'ИГРАТЬ';
+  playButton.textContent = t.play;
   playButton.className = ''; // Сброс классов glow
   playButton.style.backgroundColor = '';
   playButton.style.borderColor = '';
@@ -697,17 +821,18 @@ const resetPlayButton = () => {
 };
 
 const showError = (msg) => {
+  const t = TRANSLATIONS[currentLang];
   resetPlayButton();
-  statusText.textContent = `Ошибка: ${msg}`;
+  statusText.textContent = t.errorLabel.replace('{msg}', msg);
   progressContainer.style.display = 'flex';
   progressFill.style.width = '100%';
   
   playButton.classList.add('error-glow');
-  playButton.textContent = 'ОШИБКА!';
+  playButton.textContent = t.error.toUpperCase() + '!';
   
   setTimeout(() => {
     playButton.classList.remove('error-glow');
-    playButton.textContent = 'ИГРАТЬ';
+    playButton.textContent = t.play;
   }, 3000);
 };
 
@@ -768,47 +893,39 @@ API.onProgress((data) => {
     timeLeftSec = Math.round(remainingFiles / avgSpeed);
   }
 
-  let timeStr = currentLang === 'ru' ? 'расчет...' : 'calculating...';
+  const t = TRANSLATIONS[currentLang];
+  let timeStr = t.calculating;
   if (timeLeftSec > 0) {
     const mins = Math.floor(timeLeftSec / 60);
     const secs = timeLeftSec % 60;
-    if (currentLang === 'ru') {
-      timeStr = mins > 0 ? `${mins} мин. ${secs} сек.` : `${secs} сек.`;
-    } else {
-      timeStr = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
-    }
+    const minText = t.minShort;
+    const secText = t.secShort;
+    timeStr = mins > 0 ? `${mins} ${minText} ${secs} ${secText}` : `${secs} ${secText}`;
   } else if (remainingFiles === 0) {
-    timeStr = currentLang === 'ru' ? 'завершено' : 'done';
+    timeStr = t.done;
   }
 
   // Формирование текста в зависимости от языка
-  let text = 'Загрузка...';
-  const isRu = currentLang === 'ru';
+  let text = t.downloading + '...';
 
   switch (data.type) {
     case 'natives':
-      text = isRu ? 'Распаковка нативных библиотек...' : 'Unpacking native libraries...';
+      text = t.unpackingNatives;
       break;
     case 'classes':
-      text = isRu 
-        ? `Библиотеки: ${data.task}/${data.total} (${percent}%) — ${speedMb} МБ/с | Осталось: ${timeStr}`
-        : `Libraries: ${data.task}/${data.total} (${percent}%) — ${speedMb} MB/s | ETA: ${timeStr}`;
+      text = `${t.libraries}: ${data.task}/${data.total} (${percent}%) — ${speedMb} ${currentLang === 'ru' ? 'МБ/с' : 'MB/s'} | ${currentLang === 'ru' ? 'Осталось' : 'ETA'}: ${timeStr}`;
       break;
     case 'assets':
-      text = isRu 
-        ? `Ассеты: ${data.task}/${data.total} (${percent}%) — ${speedMb} МБ/с | Осталось: ${timeStr}`
-        : `Assets: ${data.task}/${data.total} (${percent}%) — ${speedMb} MB/s | ETA: ${timeStr}`;
+      text = `${t.assets}: ${data.task}/${data.total} (${percent}%) — ${speedMb} ${currentLang === 'ru' ? 'МБ/с' : 'MB/s'} | ${currentLang === 'ru' ? 'Осталось' : 'ETA'}: ${timeStr}`;
       break;
     case 'fabric':
-      text = isRu ? 'Установка Fabric Loader...' : 'Installing Fabric Loader...';
+      text = t.installingFabric;
       break;
     case 'forge':
-      text = isRu ? 'Установка модов...' : 'Installing mods...';
+      text = t.installingMods;
       break;
     default:
-      text = isRu 
-        ? `Подготовка: ${data.task}/${data.total} (${percent}%) — ${speedMb} МБ/с | Осталось: ${timeStr}`
-        : `Preparing: ${data.task}/${data.total} (${percent}%) — ${speedMb} MB/s | ETA: ${timeStr}`;
+      text = `${t.preparing}: ${data.task}/${data.total} (${percent}%) — ${speedMb} ${currentLang === 'ru' ? 'МБ/с' : 'MB/s'} | ${currentLang === 'ru' ? 'Осталось' : 'ETA'}: ${timeStr}`;
   }
   statusText.textContent = text;
 });
@@ -818,24 +935,34 @@ API.onDownloadProgress((data) => {
   // data = { filename, percent, downloadedMb, totalMb, speedMb, timeLeftSec }
   progressFill.style.width = `${data.percent}%`;
   
-  let timeStr = 'расчет...';
+  const t = TRANSLATIONS[currentLang];
+  let timeStr = t.calculating;
   if (data.timeLeftSec > 0) {
     const mins = Math.floor(data.timeLeftSec / 60);
     const secs = data.timeLeftSec % 60;
-    timeStr = mins > 0 ? `${mins} мин. ${secs} сек.` : `${secs} сек.`;
+    const minText = t.minShort;
+    const secText = t.secShort;
+    timeStr = mins > 0 ? `${mins} ${minText} ${secs} ${secText}` : `${secs} ${secText}`;
   } else if (data.timeLeftSec === 0 && data.percent === 100) {
-    timeStr = 'завершено';
+    timeStr = t.done;
   }
 
-  statusText.textContent = `Скачивание ${data.filename}: ${data.downloadedMb} из ${data.totalMb} МБ (${data.percent}%) — ${data.speedMb} МБ/с | Осталось: ${timeStr}`;
+  // Подставляем значения в шаблон downloadingSpeed
+  statusText.textContent = t.downloadingSpeed
+    .replace('{file}', data.filename)
+    .replace('{mb}', `${data.downloadedMb} ${currentLang === 'ru' ? 'из' : 'of'} ${data.totalMb}`)
+    .replace('{percent}', data.percent)
+    .replace('{speed}', data.speedMb)
+    .replace('{time}', timeStr);
 });
 
 // Событие старта Minecraft (появление логов игры)
 let autoMinTimer = null;
 API.onLaunchData((data) => {
-  playButton.textContent = 'ЗАПУСК...';
+  const t = TRANSLATIONS[currentLang];
+  playButton.textContent = t.launching;
   playButton.className = 'launching-glow';
-  statusText.textContent = 'Игра запущена!';
+  statusText.textContent = t.launched;
 
   // Останавливаем рендеринг фона для экономии GPU во время игры
   if (backgroundFluid) {
@@ -869,16 +996,13 @@ API.onLaunchClose((data) => {
     const isRealCrash = crashReport || (duration < 15000);
     
     if (isRealCrash) {
+      const t = TRANSLATIONS[currentLang];
       if (crashReport) {
         // Показываем первую строчку описания ошибки
         const firstLine = crashReport.split('\n')[0] || '';
-        showError(currentLang === 'ru'
-          ? `Вылет игры! ${firstLine}`
-          : `Game crash! ${firstLine}`);
+        showError(t.gameCrash.replace('{error}', firstLine));
       } else {
-        showError(currentLang === 'ru' 
-          ? `Ошибка запуска игры (код ${code}). Нажмите Ctrl+Shift+D для логов.`
-          : `Game launch error (code ${code}). Press Ctrl+Shift+D for logs.`);
+        showError(t.gameLaunchError.replace('{code}', code));
       }
     } else {
       console.log('[Launcher] Игра закрылась с ненулевым кодом, но вероятно это просто краш при закрытии (sound/shutdown hook), игнорируем.');
@@ -959,7 +1083,10 @@ window.addEventListener('keydown', (e) => {
 copyLogBtn.addEventListener('click', async () => {
   if (fullSessionLogs.length === 0) {
     const originalText = copyLogBtn.textContent;
-    copyLogBtn.textContent = currentLang === 'ru' ? 'ЛОГ ПУСТ!' : 'LOG IS EMPTY!';
+    const t = TRANSLATIONS[currentLang];
+    copyLogBtn.textContent = t.currentLang === 'ru' ? 'ЛОГ ПУСТ!' : 'LOG IS EMPTY!'; // keep fallback for safety
+    if (currentLang === 'en') copyLogBtn.textContent = 'LOG IS EMPTY!';
+    else copyLogBtn.textContent = 'ЛОГ ПУСТ!';
     setTimeout(() => copyLogBtn.textContent = originalText, 1500);
     return;
   }
@@ -967,6 +1094,7 @@ copyLogBtn.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(fullSessionLogs.join('\n'));
     const originalText = copyLogBtn.textContent;
+    const t = TRANSLATIONS[currentLang];
     copyLogBtn.textContent = currentLang === 'ru' ? 'ЛОГ СКОПИРОВАН!' : 'LOG COPIED!';
     copyLogBtn.style.background = 'rgba(0, 255, 100, 0.2)';
     copyLogBtn.style.color = '#00ff64';
@@ -997,6 +1125,7 @@ const closeCatalog = () => {
 
 // Функция обновления состояния фильтра версий в каталоге
 const updateCatalogVersionFilterState = async () => {
+  const t = TRANSLATIONS[currentLang];
   if (currentCatalogType === 'mod') {
     try {
       if (selectedVersionId) {
@@ -1013,14 +1142,10 @@ const updateCatalogVersionFilterState = async () => {
       catalogVersionFilter.value = '';
     }
     catalogVersionFilter.disabled = true;
-    catalogVersionFilter.title = currentLang === 'ru'
-      ? 'Версия заблокирована под выбранную сборку'
-      : 'Version is locked to the selected modpack';
+    catalogVersionFilter.title = t.versionLockedForBuild;
   } else {
     catalogVersionFilter.disabled = false;
-    catalogVersionFilter.title = currentLang === 'ru'
-      ? 'Фильтр по версии игры'
-      : 'Filter by game version';
+    catalogVersionFilter.title = t.filterByGameVersion;
   }
 };
 
@@ -1030,24 +1155,23 @@ modsBtn.addEventListener('click', async () => {
   
   const targetInfo = document.getElementById('catalog-target-info');
   if (targetInfo) {
+    const t = TRANSLATIONS[currentLang];
     targetInfo.innerHTML = currentLang === 'ru' ? 'Получение данных о сборке...' : 'Fetching build details...';
     try {
       if (!selectedVersionId) {
-        targetInfo.innerHTML = currentLang === 'ru'
-          ? `<span style="color: var(--error);">Сначала выберите или создайте сборку на главном экране!</span>`
-          : `<span style="color: var(--error);">Please select or create a modpack on the main screen first!</span>`;
+        targetInfo.innerHTML = `<span style="color: var(--error);">${t.selectModpackError}</span>`;
       } else {
         const details = await API.getVersionDetails(selectedVersionId);
         if (details.isCustom && details.loaderType !== 'vanilla') {
           const capitalizedLoader = details.loaderType.charAt(0).toUpperCase() + details.loaderType.slice(1);
           const formattedName = formatVersionName(selectedVersionId);
-          targetInfo.innerHTML = currentLang === 'ru'
-            ? `Сборка: <strong style="color: var(--accent-light);">${formattedName}</strong> (${capitalizedLoader} ${details.mcVersion}) — <span style="color: var(--success);">версия выбирается автоматически</span>`
-            : `Pack: <strong style="color: var(--accent-light);">${formattedName}</strong> (${capitalizedLoader} ${details.mcVersion}) — <span style="color: var(--success);">version auto-selected</span>`;
+          if (currentLang === 'ru') {
+            targetInfo.innerHTML = `Сборка: <strong style="color: var(--accent-light);">${formattedName}</strong> (${capitalizedLoader} ${details.mcVersion}) — <span style="color: var(--success);">${t.versionSelectedAuto}</span>`;
+          } else {
+            targetInfo.innerHTML = `Pack: <strong style="color: var(--accent-light);">${formattedName}</strong> (${capitalizedLoader} ${details.mcVersion}) — <span style="color: var(--success);">${t.versionSelectedAuto}</span>`;
+          }
         } else {
-          targetInfo.innerHTML = currentLang === 'ru'
-            ? `<span style="color: var(--error);">Скачивание модов доступно только для сборок (Forge/Fabric)!</span>`
-            : `<span style="color: var(--error);">Mod downloads are only available for custom packs (Forge/Fabric)!</span>`;
+          targetInfo.innerHTML = `<span style="color: var(--error);">${t.modsOnlyForModpacks}</span>`;
         }
       }
     } catch (err) {
@@ -1124,12 +1248,13 @@ createModpackBtn.addEventListener('click', async () => {
   const version = modpackVersionSelect.value;
   const loader = modpackLoaderSelect.value;
   
+  const t = TRANSLATIONS[currentLang];
   if (!name) {
-    alert(currentLang === 'ru' ? 'Пожалуйста, введите название сборки!' : 'Please enter a name for the modpack!');
+    alert(t.enterModpackNameAlert);
     return;
   }
   
-  createModpackBtn.textContent = currentLang === 'ru' ? 'СОЗДАНИЕ...' : 'CREATING...';
+  createModpackBtn.textContent = t.creating;
   createModpackBtn.disabled = true;
   
   try {
@@ -1142,10 +1267,7 @@ createModpackBtn.addEventListener('click', async () => {
       await initVersions();
       
       // Показываем сообщение об успехе
-      const successMsg = currentLang === 'ru'
-        ? `Сборка "${name}" успешно создана!`
-        : `Modpack "${name}" successfully created!`;
-      statusText.textContent = successMsg;
+      statusText.textContent = t.modpackCreated.replace('{name}', name);
       
       progressFill.style.width = '100%';
       progressContainer.style.opacity = 1;
@@ -1158,7 +1280,7 @@ createModpackBtn.addEventListener('click', async () => {
     console.error('Ошибка создания сборки:', err);
     alert((currentLang === 'ru' ? 'Ошибка создания сборки: ' : 'Error creating modpack: ') + err.message);
   } finally {
-    createModpackBtn.textContent = currentLang === 'ru' ? 'СОЗДАТЬ' : 'CREATE';
+    createModpackBtn.textContent = t.createBtn;
     createModpackBtn.disabled = false;
   }
 });
@@ -1172,20 +1294,19 @@ catalogOverlay.addEventListener('click', (e) => {
 // Клик по Импорт ZIP
 importZipBtn.addEventListener('click', async () => {
   const originalText = importZipBtn.textContent;
+  const t = TRANSLATIONS[currentLang];
   importZipBtn.textContent = currentLang === 'ru' ? 'Импорт...' : 'Importing...';
   importZipBtn.disabled = true;
 
   try {
     progressContainer.style.display = 'flex';
     progressFill.style.width = '0%';
-    statusText.textContent = currentLang === 'ru' ? 'Распаковка архива сборки...' : 'Extracting modpack archive...';
+    statusText.textContent = t.zipExtracting;
 
     const res = await API.importZip();
 
     if (res && res.status === 'success') {
-      statusText.textContent = currentLang === 'ru' 
-        ? `Сборка модов успешно импортирована: ${res.name}`
-        : `Modpack successfully imported: ${res.name}`;
+      statusText.textContent = t.zipImportSuccess.replace('{name}', res.name);
       
       progressFill.style.width = '100%';
 
@@ -1297,7 +1418,7 @@ const loadCatalogData = async (query = '', type = 'modpack') => {
     if (hits.length === 0) {
       catalogGrid.innerHTML = `
         <div style="grid-column: span 2; text-align: center; padding: 40px; color: var(--text-dimmed); font-size: 14px;">
-          Ничего не найдено
+          ${t.nothingFound}
         </div>
       `;
       return;
@@ -1338,14 +1459,11 @@ const loadCatalogData = async (query = '', type = 'modpack') => {
 
         progressContainer.style.display = 'flex';
         progressFill.style.width = '0%';
-        statusText.textContent = `Подготовка скачивания ${cardTitle}...`;
+        statusText.textContent = t.preparingDownload.replace('{title}', cardTitle);
 
         // Защита: одиночные моды можно качать только для кастомных сборок
         if (currentCatalogType === 'mod' && selectedVersionType !== 'custom') {
-          const errorMsg = currentLang === 'ru'
-            ? 'Нельзя скачивать моды на чистую ванильную версию! Пожалуйста, выберите сборку (например, Optimized Fabric или создайте свою) в главном меню.'
-            : 'Cannot download mods for a vanilla version! Please select a modpack (e.g., Optimized Fabric or create your own) in the main menu.';
-          alert(errorMsg);
+          alert(t.vanillaDownloadError);
           btn.classList.remove('downloading');
           btn.textContent = t.download;
           btn.disabled = false;
@@ -1360,7 +1478,7 @@ const loadCatalogData = async (query = '', type = 'modpack') => {
           if (res && res.status === 'success') {
             btn.className = 'card-download-btn installed';
             btn.textContent = t.installed;
-            statusText.textContent = `Успешно установлено: ${cardTitle}!`;
+            statusText.textContent = t.successInstalled.replace('{title}', cardTitle);
             progressFill.style.width = '100%';
             
             // Если была установлена версия, обновляем настройки и список версий
@@ -1371,7 +1489,7 @@ const loadCatalogData = async (query = '', type = 'modpack') => {
               progressContainer.style.display = 'none';
             }, 3000);
           } else {
-            throw new Error('Неизвестная ошибка скачивания');
+            throw new Error(t.unknownDownloadError);
           }
         } catch (err) {
           console.error('Ошибка установки мода:', err);
@@ -1385,9 +1503,10 @@ const loadCatalogData = async (query = '', type = 'modpack') => {
 
   } catch (err) {
     console.error('Ошибка загрузки данных с Modrinth:', err);
+    const t = TRANSLATIONS[currentLang];
     catalogGrid.innerHTML = `
       <div style="grid-column: span 2; text-align: center; padding: 40px; color: var(--error); font-size: 14px;">
-        Ошибка загрузки данных. Проверьте соединение с интернетом.
+        ${t.errorLoadingData}
       </div>
     `;
   }
@@ -1603,9 +1722,12 @@ installUpdateBtn.addEventListener('click', async () => {
   if (!updateDownloadUrl) return;
   
   try {
+    const t = TRANSLATIONS[currentLang];
     installUpdateBtn.disabled = true;
     installUpdateBtn.style.opacity = '0.5';
-    installUpdateBtn.textContent = currentLang === 'ru' ? 'СКАЧИВАНИЕ...' : 'DOWNLOADING...';
+    installUpdateBtn.textContent = t.creating; // Используем t.creating/t.downloading в зависимости от контекста
+    if (currentLang === 'ru') installUpdateBtn.textContent = 'СКАЧИВАНИЕ...';
+    else installUpdateBtn.textContent = 'DOWNLOADING...';
     
     // Блокируем кнопку "Играть" и показываем общий прогресс скачивания обновления
     playButton.disabled = true;
@@ -1630,8 +1752,9 @@ if (window.electronAPI.onLaunchStarted) {
     console.log('[Renderer] Игра запущена, процесс стартовал!');
     
     // Меняем UI, чтобы пользователь понимал, что игра уже открывается
-    statusText.textContent = currentLang === 'ru' ? 'Игра запущена! Ожидание окна...' : 'Game started! Waiting for window...';
-    playButton.textContent = currentLang === 'ru' ? 'В ИГРЕ' : 'IN GAME';
+    const t = TRANSLATIONS[currentLang];
+    statusText.textContent = t.gameStartedWaiting;
+    playButton.textContent = t.inGame;
     playButton.classList.remove('pulse-glow');
     playButton.style.backgroundColor = 'rgba(46, 204, 113, 0.2)'; // Зеленоватый оттенок
     playButton.style.borderColor = '#2ecc71';
