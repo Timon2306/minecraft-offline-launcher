@@ -635,6 +635,20 @@ process.on('uncaughtException', (error) => {
 
 // --- Запуск приложения ---
 app.whenReady().then(() => {
+  // Очистка старого установщика обновления (остается в Temp после апдейтов)
+  try {
+    const os = require('os');
+    const fs = require('fs');
+    const path = require('path');
+    const oldSetupPath = path.join(os.tmpdir(), 'minecraft-offline-launcher-setup.exe');
+    if (fs.existsSync(oldSetupPath)) {
+      fs.unlinkSync(oldSetupPath);
+      console.log(`[Updater] Удален старый файл обновления из temp: ${oldSetupPath}`);
+    }
+  } catch (e) {
+    console.log(`[Updater] Не удалось удалить старый файл обновления:`, e.message);
+  }
+
   configManager.loadConfig();
   createWindow();
   createTray();
