@@ -1715,6 +1715,8 @@ body.theme-minecraft-active .catalog-filters {
 body.theme-minecraft-active .catalog-filters button {
   margin: 0 !important;
   width: 100% !important;
+  padding: 8px 6px !important;
+  min-width: 120px !important;
 }
 
 /* Карточки модов (цвета) */
