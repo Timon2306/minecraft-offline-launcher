@@ -1357,6 +1357,13 @@ catalogSearch.addEventListener('input', () => {
   }, 400);
 });
 
+// Клик по контейнеру поиска фокусирует сам инпут
+if (catalogSearch.parentElement) {
+  catalogSearch.parentElement.addEventListener('click', () => {
+    catalogSearch.focus();
+  });
+}
+
 // Загрузка модов/сборок с Modrinth
 const loadCatalogData = async (query = '', type = 'modpack') => {
   // Выводим скелетоны (заглушку загрузки)

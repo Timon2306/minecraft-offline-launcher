@@ -958,6 +958,7 @@ body::after {
   max-width: 480px;
   color: var(--text-dimmed);
   transition: all 0.3s;
+  cursor: text; /* Курсор ввода при наведении на всю плашку */
 }
 
 .search-box:focus-within {
@@ -973,7 +974,8 @@ body::after {
   outline: none;
   color: var(--text-color);
   font-size: 14px;
-  width: 100%;
+  flex: 1; /* Растягиваем на всю доступную область */
+  min-width: 0; /* Предотвращаем сжатие flex-элемента */
 }
 
 .search-box input::placeholder {
@@ -1687,6 +1689,14 @@ body.theme-minecraft-active .search-box #catalog-search {
   padding: 0 !important;
   height: 100% !important;
   min-height: unset !important;
+  color: #ffffff !important; /* Белый цвет вводимого текста */
+}
+body.theme-minecraft-active .search-box #catalog-search::placeholder {
+  color: #aaaaaa !important; /* Светло-серый плейсхолдер */
+}
+body.theme-minecraft-active #create-modpack-modal label {
+  color: #3f3f3f !important; /* Темный цвет для лейблов создания сборки */
+  text-shadow: none !important;
 }
 body.theme-minecraft-active .catalog-version-select {
   width: auto !important;
