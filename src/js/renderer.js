@@ -599,7 +599,7 @@ const renderVersions = (data) => {
     textSpan.textContent = `${formatVersionName(v.id)}${badge}`;
     item.appendChild(textSpan);
     
-    if (v.type === 'custom') {
+    if (v.type === 'custom' || v.type === 'cristalix') {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'delete-version-btn';
       deleteBtn.dataset.versionId = v.id;

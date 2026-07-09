@@ -568,6 +568,48 @@ ipcMain.handle('delete-version', async (event, { versionId }) => {
   try {
     const config = configManager ? configManager.getConfig() : {};
     const gameDir = config.gameDirectory;
+    
+    if (versionId.startsWith('cristalix-')) {
+      const baseName = versionId.substring('cristalix-'.length);
+      
+      // Удаляем из конфигурации
+      if (config.allowedCristalixPacks) {
+        config.allowedCristalixPacks = config.allowedCristalixPacks.filter(p => p !== baseName.toLowerCase());
+      }
+      
+      // Ищем папку на рабочем столе или в директории игры
+      let cristaloxDir = path.join(require('os').homedir(), 'Desktop', 'папки', 'cristalox');
+      let destDir = path.join(cristaloxDir, baseName);
+      let deleted = false;
+      
+      if (fs.existsSync(destDir)) {
+        fs.rmSync(destDir, { recursive: true, force: true });
+        deleted = true;
+      } else {
+        cristaloxDir = path.join(gameDir, 'cristalox');
+        destDir = path.join(cristaloxDir, baseName);
+        if (fs.existsSync(destDir)) {
+          fs.rmSync(destDir, { recursive: true, force: true });
+          deleted = true;
+        }
+      }
+      
+      if (config.selectedVersion === versionId) {
+        config.selectedVersion = '1.20.4';
+        config.selectedVersionType = 'release';
+      }
+      configManager.saveConfig(config);
+      
+      if (!deleted) {
+        // Папка не найдена, но из конфига удалили
+        return { status: 'success' };
+      }
+      
+      console.log(`[VersionManager] Успешно удалена сборка Cristalix: ${baseName}`);
+      return { status: 'success' };
+    }
+
+    // Для обычных кастомных версий
     const versionFolder = path.join(gameDir, 'versions', versionId);
 
     if (fs.existsSync(versionFolder)) {
