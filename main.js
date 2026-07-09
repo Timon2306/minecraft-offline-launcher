@@ -240,23 +240,29 @@ ipcMain.handle('download-app-update', async (event, { url }) => {
   console.log(`[Updater] Скачивание обновления из ${url} в ${destPath}...`);
   
   return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(destPath);
     const options = {
       headers: { 'User-Agent': 'Mozilla/5.0' },
       timeout: 30000
     };
     
-    function download(downloadUrl) {
-      https.get(downloadUrl, options, (res) => {
+    function download(downloadUrl, originalUrl, retries = 3) {
+      const file = fs.createWriteStream(destPath);
+      const req = https.get(downloadUrl, options, (res) => {
         if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
-          download(res.headers.location);
+          file.close();
+          download(res.headers.location, originalUrl, retries);
           return;
         }
         
         if (res.statusCode !== 200) {
           file.close();
-          fs.unlinkSync(destPath);
-          reject(new Error(`Server status ${res.statusCode}`));
+          if (retries > 0) {
+            console.log(`[Updater] HTTP ${res.statusCode}. Повтор... (${retries} осталось)`);
+            setTimeout(() => download(originalUrl, originalUrl, retries - 1), 2000);
+          } else {
+            if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
+            reject(new Error(`Server status ${res.statusCode}`));
+          }
           return;
         }
         
@@ -280,28 +286,33 @@ ipcMain.handle('download-app-update', async (event, { url }) => {
         
         res.pipe(file);
         
-        file.on('close', () => {
-          console.log('[Updater] Скачивание завершено, файл закрыт. Запуск установщика...');
-          
-          // Запускаем установщик в отдельном процессе
-          const child = spawn(destPath, [], {
-            detached: true,
-            stdio: 'ignore'
+        file.on('finish', () => {
+          file.close(() => {
+            console.log('[Updater] Скачивание завершено, файл закрыт. Запуск установщика...');
+            const child = spawn(destPath, [], { detached: true, stdio: 'ignore' });
+            child.unref();
+            require('electron').app.exit(0);
           });
-          child.unref();
-          
-          // Немедленно выходим из приложения
-          const { app } = require('electron');
-          app.exit(0);
         });
-      }).on('error', (err) => {
+      });
+
+      req.on('error', (err) => {
         file.close();
-        if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
-        reject(err);
+        if (retries > 0) {
+          console.log(`[Updater] Сетевая ошибка ${err.message}. Повтор... (${retries} осталось)`);
+          setTimeout(() => download(originalUrl, originalUrl, retries - 1), 2000);
+        } else {
+          if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
+          reject(err);
+        }
+      });
+      
+      req.on('timeout', () => {
+        req.destroy();
       });
     }
     
-    download(url);
+    download(url, url, 3);
   });
 });
 
